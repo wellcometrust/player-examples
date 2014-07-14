@@ -5082,6 +5082,7 @@ define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["req
             _super.call(this, $element);
         }
         TreeViewLeftPanel.prototype.create = function () {
+            var _this = this;
             this.setConfig('treeViewLeftPanel');
 
             _super.prototype.create.call(this);
@@ -5092,39 +5093,39 @@ define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["req
             this.$sortByLabel = $('<span class="sort">Sort By:</span>');
             this.$treeViewOptions.append(this.$sortByLabel);
 
-            this.$sortList = $('<select>\
-                                <option value="date">Date</option>\
-                                <option value="volume">Volume</option>\
-                            </select>');
+            this.$buttonGroup = $('<div class="btn-group"></div>');
+            this.$treeViewOptions.append(this.$buttonGroup);
 
-            this.$treeViewOptions.append(this.$sortList);
+            this.$sortByDateButton = $('<button class="button">' + this.content.date + '</button>');
+            this.$buttonGroup.append(this.$sortByDateButton);
 
-            var that = this;
+            this.$sortByVolumeButton = $('<button class="button">' + this.content.volume + '</button>');
+            this.$buttonGroup.append(this.$sortByVolumeButton);
 
-            this.$sortList.on('change', function (e) {
-                var val = $(this).find('option:selected').val();
-
-                switch (val) {
-                    case "date":
-                        that.treeView.rootNode = that.provider.getJournalTree(journalSortType.JournalSortType.date);
-                        break;
-                    case "volume":
-                        that.treeView.rootNode = that.provider.getJournalTree(journalSortType.JournalSortType.volume);
-                        break;
-                }
-
-                that.treeView.dataBind();
-                that.selectCurrentTreeNode();
+            this.$sortByDateButton.on('click', function () {
+                _this.treeView.rootNode = _this.provider.getJournalTree(journalSortType.JournalSortType.date);
+                _this.treeView.dataBind();
+                _this.selectCurrentTreeNode();
             });
 
-            this.$sortList.hide();
+            this.$sortByVolumeButton.on('click', function () {
+                _this.treeView.rootNode = _this.provider.getJournalTree(journalSortType.JournalSortType.volume);
+                _this.treeView.dataBind();
+                _this.selectCurrentTreeNode();
+            });
+
+            this.$treeViewOptions.hide();
         };
 
         TreeViewLeftPanel.prototype.createTreeView = function () {
             this.treeView = new tree.TreeView(this.$treeView);
 
+            this.updateTreeView();
+            this.updateTreeViewOptions();
+        };
+
+        TreeViewLeftPanel.prototype.updateTreeView = function () {
             if (this.isPeriodical()) {
-                this.$sortList.show();
                 this.treeView.rootNode = this.provider.getJournalTree(journalSortType.JournalSortType.date);
             } else {
                 this.treeView.rootNode = this.provider.getTree();
@@ -5138,10 +5139,18 @@ define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["req
             return manifestType.toLowerCase() === "periodicalissue";
         };
 
-        TreeViewLeftPanel.prototype.openTreeView = function () {
-            this.$treeViewOptions.show();
+        TreeViewLeftPanel.prototype.updateTreeViewOptions = function () {
+            if (this.isPeriodical()) {
+                this.$treeViewOptions.show();
+            } else {
+                this.$treeViewOptions.hide();
+            }
+        };
 
+        TreeViewLeftPanel.prototype.openTreeView = function () {
             var that = this;
+
+            this.updateTreeViewOptions();
 
             setTimeout(function () {
                 that.selectCurrentTreeNode();
@@ -6258,6 +6267,8 @@ define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "expo
                 var uri = escape(parent.document.URL);
 
                 that.$acceptTermsButton.attr('href', that.options.acceptTermsUri + '?redirectUrl=' + uri);
+
+                _this.resize();
             });
 
             $.subscribe(LoginDialogue.HIDE_LOGIN_DIALOGUE, function (e) {
