@@ -1,5 +1,9 @@
 {
     "options": {
+        "theme": "coreplayer-default-theme",
+        "leftPanelEnabled": true,
+        "rightPanelEnabled": true,
+        "overrideFullScreen": false,
         "sectionMappings": {
             "CoverFrontOutside": "Front Cover",
             "CoverBackOutside": "Back Cover",
@@ -26,7 +30,7 @@
         },
         "embedDialogue": {
             "options": {
-                "embedTemplate": "<div class=\"wellcomePlayer\" data-uri=\"{0}\" data-sequenceindex=\"{1}\" data-assetindex=\"{2}\" data-zoom=\"{3}\" data-config=\"{4}\" style=\"width:{5}px; height:{6}px; background-color: #000\"></div>\n<script type=\"text/javascript\" id=\"embedWellcomePlayer\" src=\"{7}\"></script><script type=\"text/javascript\">/* wordpress fix */</script>"
+                "embedTemplate": "<div class=\"wellcomePlayer\" data-uri=\"{0}\" data-sequenceindex=\"{1}\" data-assetindex=\"{2}\" data-zoom=\"{3}\" data-rotation\"{4}\" data-config=\"{5}\" style=\"width:{6}px; height:{7}px; background-color: #000\"></div>\n<script type=\"text/javascript\" id=\"embedWellcomePlayer\" src=\"{8}\"></script><script type=\"text/javascript\">/* wordpress fix */</script>"
             },
             "content": {
                 "title": "Embed",
@@ -55,7 +59,8 @@
                 "panelCollapsedWidth": 30,
                 "panelExpandedWidth": 255,
                 "panelOpen": true,
-                "panelAnimationDuration": 250
+                "panelAnimationDuration": 250,
+                "thumbsExtraHeight": 6
             },
             "content": {
                 "index": "Index",
@@ -74,13 +79,17 @@
             "options": {
                 "panelCollapsedWidth": 30,
                 "panelExpandedWidth": 255,
-                "panelAnimationDuration": 250
+                "panelAnimationDuration": 250,
+                "panelOpen": false
             },
             "content": {
                 "holdingText": "Your module goes here!"
             }
         },
         "footerPanel": {
+            "options": {
+                "minimiseButtons": false
+            },
             "content": {
                 "fullScreen": "Full Screen",
                 "exitFullScreen": "Exit Full Screen",

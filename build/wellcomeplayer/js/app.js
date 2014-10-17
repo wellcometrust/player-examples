@@ -15,6 +15,12 @@
 
 (function ($) {
 
+    $.fn.targetBlank = function () {
+        return this.each(function () {
+            $(this).find('a').prop('target', '_blank');
+        });
+    }
+
     $.fn.swapClass = function (removeClass, addClass) {
         return this.each(function () {
             $(this).removeClass(removeClass).addClass(addClass);
@@ -165,35 +171,55 @@
 
     };
 
+    $.fn.horizontalMargins = function () {
+        var $self = $(this);
+        return parseInt($self.css('marginLeft')) + parseInt($self.css('marginRight'));
+    };
+
+    $.fn.verticalMargins = function () {
+        var $self = $(this);
+        return parseInt($self.css('marginTop')) + parseInt($self.css('marginBottom'));
+    };
+
+    $.fn.horizontalPadding = function () {
+        var $self = $(this);
+        return parseInt($self.css('paddingLeft')) + parseInt($self.css('paddingRight'));
+    };
+
+    $.fn.verticalPadding = function () {
+        var $self = $(this);
+        return parseInt($self.css('paddingTop')) + parseInt($self.css('paddingBottom'));
+    };
+
     // useful if stretching to fit a parent element's inner height.
     // borders/margins/padding are included in final height, so no overspill.
-    $.fn.actualHeight = function (height) {
-
-        return this.each(function () {
-
-            var $self = $(this);
-
-            $self.height(height);
-
-            height -= $self.outerHeight(true) - $self.height();
-
-            $self.height(height);
-        });
-    };
-
-    $.fn.actualWidth = function (width) {
-
-        return this.each(function () {
-
-            var $self = $(this);
-
-            $self.width(width);
-
-            width -= $self.outerWidth(true) - $self.width();
-
-            $self.width(width);
-        });
-    };
+//    $.fn.actualHeight = function (height) {
+//
+//        return this.each(function () {
+//
+//            var $self = $(this);
+//
+//            $self.height(height);
+//
+//            height -= $self.outerHeight(true) - $self.height();
+//
+//            $self.height(height);
+//        });
+//    };
+//
+//    $.fn.actualWidth = function (width) {
+//
+//        return this.each(function () {
+//
+//            var $self = $(this);
+//
+//            $self.width(width);
+//
+//            width -= $self.outerWidth(true) - $self.width();
+//
+//            $self.width(width);
+//        });
+//    };
 
 })(jQuery);
 
@@ -679,9 +705,7 @@ define('utils',["require", "exports"], function(require, exports) {
     exports.Utils = Utils;
 });
 
-define('bootstrapper',["require", "exports", "utils"], function(require, exports, __utils__) {
-    var utils = __utils__;
-
+define('bootstrapper',["require", "exports", "utils"], function(require, exports, utils) {
     var BootStrapper = (function () {
         function BootStrapper(extensions) {
             this.IIIF = false;
@@ -801,21 +825,23 @@ define('bootstrapper',["require", "exports", "utils"], function(require, exports
                 extension = that.extensions['seadragon/iiif'];
             }
 
+            var configPath = (window.DEBUG) ? 'extensions/' + extension.name + '/config.js' : 'js/' + extension.name + '-config.js';
+
             yepnope({
                 test: window.btoa && window.atob,
                 nope: 'js/base64.min.js',
                 complete: function () {
-                    yepnope.injectCss(extension.css, function () {
-                        $.getJSON(extension.config, function (config) {
-                            if (that.configExtension) {
-                                config.uri = that.configExtensionUri;
+                    $.getJSON(configPath, function (config) {
+                        if (that.configExtension) {
+                            config.uri = that.configExtensionUri;
 
-                                $.extend(true, config, that.configExtension);
+                            $.extend(true, config, that.configExtension);
+                        }
 
-                                that.createExtension(extension, config);
-                            } else {
-                                that.createExtension(extension, config);
-                            }
+                        var cssPath = (window.DEBUG) ? 'extensions/' + extension.name + '/css/styles.css' : 'themes/' + config.options.theme + '/css/' + extension.name + '.css';
+
+                        yepnope.injectCss(cssPath, function () {
+                            that.createExtension(extension, config);
                         });
                     });
                 }
@@ -1875,11 +1901,11 @@ define('modules/coreplayer-shared-module/panel',["require", "exports"], function
             var $parent = this.$element.parent();
 
             if (this.fitToParentWidth) {
-                this.$element.actualWidth($parent.width());
+                this.$element.width($parent.width());
             }
 
             if (this.fitToParentHeight) {
-                this.$element.actualHeight($parent.height());
+                this.$element.height($parent.height());
             }
         };
         return Panel;
@@ -1893,9 +1919,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/baseView',["require", "exports", "./panel"], function(require, exports, __panel__) {
-    var panel = __panel__;
-
+define('modules/coreplayer-shared-module/baseView',["require", "exports", "./panel"], function(require, exports, panel) {
     var BaseView = (function (_super) {
         __extends(BaseView, _super);
         function BaseView($element, fitToParentWidth, fitToParentHeight) {
@@ -1939,12 +1963,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/dialogue',["require", "exports", "./baseExtension", "./shell", "../../utils", "./baseView"], function(require, exports, __baseExtension__, __shell__, __utils__, __baseView__) {
-    var baseExtension = __baseExtension__;
-    var shell = __shell__;
-    var utils = __utils__;
-    var baseView = __baseView__;
-
+define('modules/coreplayer-shared-module/dialogue',["require", "exports", "./baseExtension", "./shell", "../../utils", "./baseView"], function(require, exports, baseExtension, shell, utils, baseView) {
     var Dialogue = (function (_super) {
         __extends(Dialogue, _super);
         function Dialogue($element) {
@@ -2056,12 +2075,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/genericDialogue',["require", "exports", "./baseExtension", "./dialogue"], function(require, exports, __baseExtension__, __dialogue__) {
-    var baseExtension = __baseExtension__;
-    
-    
-    var dialogue = __dialogue__;
-
+define('modules/coreplayer-shared-module/genericDialogue',["require", "exports", "./baseExtension", "./dialogue"], function(require, exports, baseExtension, dialogue) {
     var GenericDialogue = (function (_super) {
         __extends(GenericDialogue, _super);
         function GenericDialogue($element) {
@@ -2084,7 +2098,7 @@ define('modules/coreplayer-shared-module/genericDialogue',["require", "exports",
             this.$message = $('<p></p>');
             this.$content.append(this.$message);
 
-            this.$acceptButton = $('<a href="#" class="button accept"></a>');
+            this.$acceptButton = $('<a href="#" class="btn btn-primary accept"></a>');
             this.$content.append(this.$acceptButton);
             this.$acceptButton.text(this.content.ok);
 
@@ -2144,12 +2158,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/shell',["require", "exports", "./baseExtension", "../../utils", "./baseView", "./genericDialogue"], function(require, exports, __baseExtension__, __utils__, __baseView__, __genericDialogue__) {
-    var baseExtension = __baseExtension__;
-    var utils = __utils__;
-    var baseView = __baseView__;
-    var genericDialogue = __genericDialogue__;
-
+define('modules/coreplayer-shared-module/shell',["require", "exports", "./baseExtension", "./baseView", "./genericDialogue"], function(require, exports, baseExtension, baseView, genericDialogue) {
     var Shell = (function (_super) {
         __extends(Shell, _super);
         function Shell($element) {
@@ -2167,28 +2176,28 @@ define('modules/coreplayer-shared-module/shell',["require", "exports", "./baseEx
                 Shell.$overlays.hide();
             });
 
-            Shell.$headerPanel = utils.Utils.createDiv('headerPanel');
+            Shell.$headerPanel = $('<div class="headerPanel"></div>');
             this.$element.append(Shell.$headerPanel);
 
-            Shell.$mainPanel = utils.Utils.createDiv('mainPanel');
+            Shell.$mainPanel = $('<div class="mainPanel"></div>');
             this.$element.append(Shell.$mainPanel);
 
-            Shell.$centerPanel = utils.Utils.createDiv('centerPanel');
+            Shell.$centerPanel = $('<div class="centerPanel"></div>');
             Shell.$mainPanel.append(Shell.$centerPanel);
 
-            Shell.$leftPanel = utils.Utils.createDiv('leftPanel');
+            Shell.$leftPanel = $('<div class="leftPanel"></div>');
             Shell.$mainPanel.append(Shell.$leftPanel);
 
-            Shell.$rightPanel = utils.Utils.createDiv('rightPanel');
+            Shell.$rightPanel = $('<div class="rightPanel"></div>');
             Shell.$mainPanel.append(Shell.$rightPanel);
 
-            Shell.$footerPanel = utils.Utils.createDiv('footerPanel');
+            Shell.$footerPanel = $('<div class="footerPanel"></div>');
             Shell.$element.append(Shell.$footerPanel);
 
-            Shell.$overlays = utils.Utils.createDiv('overlays');
+            Shell.$overlays = $('<div class="overlays"></div>');
             this.$element.append(Shell.$overlays);
 
-            Shell.$genericDialogue = utils.Utils.createDiv('overlay genericDialogue');
+            Shell.$genericDialogue = $('<div class="overlay genericDialogue"></div>');
             Shell.$overlays.append(Shell.$genericDialogue);
 
             Shell.$overlays.on('click', function (e) {
@@ -2207,8 +2216,9 @@ define('modules/coreplayer-shared-module/shell',["require", "exports", "./baseEx
             Shell.$overlays.width(this.extension.width());
             Shell.$overlays.height(this.extension.height());
 
-            var mainHeight = this.$element.height() - Shell.$headerPanel.height() - Shell.$footerPanel.height();
-            Shell.$mainPanel.actualHeight(mainHeight);
+            var mainHeight = this.$element.height() - parseInt(Shell.$mainPanel.css('marginTop')) - Shell.$headerPanel.height() - Shell.$footerPanel.height();
+
+            Shell.$mainPanel.height(mainHeight);
         };
         Shell.SHOW_OVERLAY = 'onShowOverlay';
         Shell.HIDE_OVERLAY = 'onHideOverlay';
@@ -2217,14 +2227,7 @@ define('modules/coreplayer-shared-module/shell',["require", "exports", "./baseEx
     exports.Shell = Shell;
 });
 
-define('modules/coreplayer-shared-module/baseExtension',["require", "exports", "../../utils", "./shell", "./genericDialogue"], function(require, exports, __utils__, __shell__, __genericDialogue__) {
-    var utils = __utils__;
-    
-    var shell = __shell__;
-    var genericDialogue = __genericDialogue__;
-    
-    
-
+define('modules/coreplayer-shared-module/baseExtension',["require", "exports", "../../utils", "./shell", "./genericDialogue"], function(require, exports, utils, shell, genericDialogue) {
     var BaseExtension = (function () {
         function BaseExtension(provider) {
             this.isFullScreen = false;
@@ -2248,6 +2251,8 @@ define('modules/coreplayer-shared-module/baseExtension',["require", "exports", "
                     _this.handleParentFrameEvent(message);
                 }
             });
+
+            this.triggerSocket(BaseExtension.LOAD);
 
             this.$element.removeClass();
             if (!this.provider.isHomeDomain)
@@ -2274,7 +2279,11 @@ define('modules/coreplayer-shared-module/baseExtension',["require", "exports", "
                 if (!_this.isOverlayActive()) {
                     $('#top').focus();
                     _this.isFullScreen = !_this.isFullScreen;
-                    _this.triggerSocket(BaseExtension.TOGGLE_FULLSCREEN, _this.isFullScreen);
+
+                    _this.triggerSocket(BaseExtension.TOGGLE_FULLSCREEN, {
+                        isFullScreen: _this.isFullScreen,
+                        overrideFullScreen: _this.provider.config.options.overrideFullScreen
+                    });
                 }
             });
 
@@ -2356,14 +2365,14 @@ define('modules/coreplayer-shared-module/baseExtension',["require", "exports", "
         };
 
         BaseExtension.prototype.showDialogue = function (message, acceptCallback, buttonText, allowClose) {
-            $.publish(genericDialogue.GenericDialogue.SHOW_GENERIC_DIALOGUE, [
-                {
+            this.closeActiveDialogue();
+
+            $.publish(genericDialogue.GenericDialogue.SHOW_GENERIC_DIALOGUE, [{
                     message: message,
                     acceptCallback: acceptCallback,
                     buttonText: buttonText,
                     allowClose: allowClose
-                }
-            ]);
+                }]);
         };
 
         BaseExtension.prototype.closeActiveDialogue = function () {
@@ -2386,6 +2395,7 @@ define('modules/coreplayer-shared-module/baseExtension',["require", "exports", "
                 this.triggerSocket(BaseExtension.SEQUENCE_INDEX_CHANGED, manifest.assetSequence);
             }
         };
+        BaseExtension.LOAD = 'onLoad';
         BaseExtension.RESIZE = 'onResize';
         BaseExtension.TOGGLE_FULLSCREEN = 'onToggleFullScreen';
         BaseExtension.CANVAS_INDEX_CHANGED = 'onAssetIndexChanged';
@@ -2441,12 +2451,7 @@ define('modules/coreplayer-shared-module/thumb',["require", "exports"], function
     return Thumb;
 });
 
-define('modules/coreplayer-shared-module/baseProvider',["require", "exports", "../../utils", "./treeNode", "./thumb"], function(require, exports, __utils__, __TreeNode__, __Thumb__) {
-    var utils = __utils__;
-    
-    var TreeNode = __TreeNode__;
-    var Thumb = __Thumb__;
-
+define('modules/coreplayer-shared-module/baseProvider',["require", "exports", "../../utils", "./treeNode", "./thumb"], function(require, exports, utils, TreeNode, Thumb) {
     (function (params) {
         params[params["sequenceIndex"] = 0] = "sequenceIndex";
         params[params["canvasIndex"] = 1] = "canvasIndex";
@@ -2478,7 +2483,7 @@ define('modules/coreplayer-shared-module/baseProvider',["require", "exports", ".
             this.isLightbox = utils.Utils.getQuerystringParameter('lb') === "true";
 
             if (this.isHomeDomain && !this.isReload) {
-                this.sequenceIndex = parseInt(utils.Utils.getHashParameter(this.paramMap[params.sequenceIndex], parent.document));
+                this.sequenceIndex = parseInt(utils.Utils.getHashParameter(this.paramMap[0 /* sequenceIndex */], parent.document));
 
                 if (!this.sequenceIndex) {
                     var hash = parent.document.location.hash;
@@ -2489,7 +2494,7 @@ define('modules/coreplayer-shared-module/baseProvider',["require", "exports", ".
             }
 
             if (!this.sequenceIndex) {
-                this.sequenceIndex = parseInt(utils.Utils.getQuerystringParameter(this.paramMap[params.sequenceIndex])) || 0;
+                this.sequenceIndex = parseInt(utils.Utils.getQuerystringParameter(this.paramMap[0 /* sequenceIndex */])) || 0;
             }
 
             this.canvasIndex = -1;
@@ -2668,8 +2673,9 @@ define('modules/coreplayer-shared-module/baseProvider',["require", "exports", ".
         };
 
         BaseProvider.prototype.getStructureByCanvasIndex = function (index) {
+            if (index == -1)
+                return null;
             var canvas = this.getCanvasByIndex(index);
-
             return this.getCanvasStructure(canvas);
         };
 
@@ -2843,7 +2849,7 @@ define('modules/coreplayer-shared-module/baseProvider',["require", "exports", ".
                 var height = 150;
 
                 if (heightRatio) {
-                    height = 90 * heightRatio;
+                    Math.floor(height = 90 * heightRatio);
                 }
 
                 var visible = true;
@@ -2876,6 +2882,35 @@ define('modules/coreplayer-shared-module/baseProvider',["require", "exports", ".
         BaseProvider.prototype.getMetaData = function (callback) {
             callback(null);
         };
+
+        BaseProvider.prototype.defaultToThumbsView = function () {
+            var manifestType = this.getManifestType();
+
+            switch (manifestType) {
+                case 'monograph':
+                    if (!this.isMultiSequence())
+                        return true;
+                    break;
+                case 'archive':
+                    return true;
+                    break;
+                case 'boundmanuscript':
+                    return true;
+                    break;
+                case 'artwork':
+                    return true;
+            }
+
+            var sequenceType = this.getSequenceType();
+
+            switch (sequenceType) {
+                case 'application-pdf':
+                    return true;
+                    break;
+            }
+
+            return false;
+        };
         return BaseProvider;
     })();
     exports.BaseProvider = BaseProvider;
@@ -2887,13 +2922,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-dialogues-module/helpDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, __dialogue__) {
-    
-    
-    
-    
-    var dialogue = __dialogue__;
-
+define('modules/coreplayer-dialogues-module/helpDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, dialogue) {
     var HelpDialogue = (function (_super) {
         __extends(HelpDialogue, _super);
         function HelpDialogue($element) {
@@ -2925,7 +2954,7 @@ define('modules/coreplayer-dialogues-module/helpDialogue',["require", "exports",
             this.$title.text(this.content.title);
             this.$message.html(this.content.text);
 
-            this.$message.find('a').prop('target', '_blank');
+            this.$message.targetBlank();
 
             this.$element.hide();
         };
@@ -2946,12 +2975,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/headerPanel',["require", "exports", "./baseExtension", "./baseView", "../coreplayer-dialogues-module/helpDialogue"], function(require, exports, __baseExtension__, __baseView__, __help__) {
-    var baseExtension = __baseExtension__;
-    var baseView = __baseView__;
-    
-    var help = __help__;
-
+define('modules/coreplayer-shared-module/headerPanel',["require", "exports", "./baseExtension", "./baseView", "../coreplayer-dialogues-module/helpDialogue"], function(require, exports, baseExtension, baseView, help) {
     var HeaderPanel = (function (_super) {
         __extends(HeaderPanel, _super);
         function HeaderPanel($element) {
@@ -3032,7 +3056,8 @@ define('modules/coreplayer-shared-module/headerPanel',["require", "exports", "./
 
             if (this.$messageBox.is(':visible')) {
                 var $text = this.$messageBox.find('.text');
-                $text.actualWidth(this.$element.width() - this.$messageBox.find('.close').outerWidth(true));
+
+                $text.width(this.$element.width() - this.$messageBox.find('.close').outerWidth(true));
                 $text.ellipsisFill(this.message);
             }
         };
@@ -3047,14 +3072,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require", "exports", "../coreplayer-shared-module/baseExtension", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/headerPanel"], function(require, exports, __baseExtension__, __extension__, __baseHeader__) {
-    var baseExtension = __baseExtension__;
-    var extension = __extension__;
-    var baseHeader = __baseHeader__;
-    
-    
-    
-
+define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require", "exports", "../coreplayer-shared-module/baseExtension", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/headerPanel"], function(require, exports, baseExtension, extension, baseHeader) {
     var PagingHeaderPanel = (function (_super) {
         __extends(PagingHeaderPanel, _super);
         function PagingHeaderPanel($element) {
@@ -3077,10 +3095,10 @@ define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require
             this.$prevOptions = $('<div class="prevOptions"></div>');
             this.$centerOptions.append(this.$prevOptions);
 
-            this.$firstButton = $('<a class="imageButton first"></a>');
+            this.$firstButton = $('<a class="imageBtn first"></a>');
             this.$prevOptions.append(this.$firstButton);
 
-            this.$prevButton = $('<a class="imageButton prev"></a>');
+            this.$prevButton = $('<a class="imageBtn prev"></a>');
             this.$prevOptions.append(this.$prevButton);
 
             this.$modeOptions = $('<div class="mode"></div>');
@@ -3105,19 +3123,19 @@ define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require
             this.$total = $('<span class="total"></span>');
             this.$search.append(this.$total);
 
-            this.$searchButton = $('<a class="imageButton go"></a>');
+            this.$searchButton = $('<a class="imageBtn go"></a>');
             this.$search.append(this.$searchButton);
 
             this.$nextOptions = $('<div class="nextOptions"></div>');
             this.$centerOptions.append(this.$nextOptions);
 
-            this.$nextButton = $('<a class="imageButton next"></a>');
+            this.$nextButton = $('<a class="imageBtn next"></a>');
             this.$nextOptions.append(this.$nextButton);
 
-            this.$lastButton = $('<a class="imageButton last"></a>');
+            this.$lastButton = $('<a class="imageBtn last"></a>');
             this.$nextOptions.append(this.$lastButton);
 
-            if ((this.extension).getMode() == extension.Extension.PAGE_MODE) {
+            if (this.extension.getMode() == extension.Extension.PAGE_MODE) {
                 this.$pageModeOption.attr('checked', 'checked');
                 this.$pageModeOption.removeAttr('disabled');
                 this.$pageModeLabel.removeClass('disabled');
@@ -3198,7 +3216,7 @@ define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require
         PagingHeaderPanel.prototype.setTitles = function () {
             var mode;
 
-            if ((this.extension).getMode() === extension.Extension.PAGE_MODE) {
+            if (this.extension.getMode() === extension.Extension.PAGE_MODE) {
                 mode = "page";
             } else {
                 mode = "image";
@@ -3214,7 +3232,7 @@ define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require
         PagingHeaderPanel.prototype.setTotal = function () {
             var of = this.content.of;
 
-            if ((this.extension).getMode() === extension.Extension.PAGE_MODE) {
+            if (this.extension.getMode() === extension.Extension.PAGE_MODE) {
                 this.$total.html(String.prototype.format(of, this.provider.getLastCanvasOrderLabel()));
             } else {
                 this.$total.html(String.prototype.format(of, this.provider.getTotalCanvases()));
@@ -3224,7 +3242,7 @@ define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require
         PagingHeaderPanel.prototype.setSearchPlaceholder = function (index) {
             var canvas = this.provider.getCanvasByIndex(index);
 
-            if ((this.extension).getMode() === extension.Extension.PAGE_MODE) {
+            if (this.extension.getMode() === extension.Extension.PAGE_MODE) {
                 var orderLabel = this.provider.getCanvasOrderLabel(canvas);
 
                 if (orderLabel === "-") {
@@ -3247,7 +3265,7 @@ define('modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel',["require
                 return;
             }
 
-            if ((this.extension).getMode() === extension.Extension.PAGE_MODE) {
+            if (this.extension.getMode() === extension.Extension.PAGE_MODE) {
                 $.publish(PagingHeaderPanel.PAGE_SEARCH, [value]);
             } else {
                 var index = parseInt(this.$searchText.val());
@@ -3300,12 +3318,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/baseExpandPanel',["require", "exports", "./baseExtension", "../../utils", "./baseView"], function(require, exports, __baseExtension__, __utils__, __baseView__) {
-    var baseExtension = __baseExtension__;
-    
-    var utils = __utils__;
-    var baseView = __baseView__;
-
+define('modules/coreplayer-shared-module/baseExpandPanel',["require", "exports", "./baseExtension", "../../utils", "./baseView"], function(require, exports, baseExtension, utils, baseView) {
     var BaseExpandPanel = (function (_super) {
         __extends(BaseExpandPanel, _super);
         function BaseExpandPanel($element) {
@@ -3420,7 +3433,7 @@ define('modules/coreplayer-shared-module/baseExpandPanel',["require", "exports",
         BaseExpandPanel.prototype.resize = function () {
             _super.prototype.resize.call(this);
 
-            this.$main.actualHeight(this.$element.parent().height() - this.$top.outerHeight(true));
+            this.$main.height(this.$element.parent().height() - this.$top.outerHeight(true));
         };
         return BaseExpandPanel;
     })(baseView.BaseView);
@@ -3433,12 +3446,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/leftPanel',["require", "exports", "./baseExpandPanel"], function(require, exports, __baseExpandPanel__) {
-    
-    
-    
-    var baseExpandPanel = __baseExpandPanel__;
-
+define('modules/coreplayer-shared-module/leftPanel',["require", "exports", "./baseExpandPanel"], function(require, exports, baseExpandPanel) {
     var LeftPanel = (function (_super) {
         __extends(LeftPanel, _super);
         function LeftPanel($element) {
@@ -3488,12 +3496,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-treeviewleftpanel-module/treeView',["require", "exports", "../coreplayer-shared-module/baseView", "../coreplayer-shared-module/treeNode"], function(require, exports, __baseView__, __TreeNode__) {
-    
-    
-    var baseView = __baseView__;
-    var TreeNode = __TreeNode__;
-
+define('modules/coreplayer-treeviewleftpanel-module/treeView',["require", "exports", "../coreplayer-shared-module/baseView"], function(require, exports, baseView) {
     var TreeView = (function (_super) {
         __extends(TreeView, _super);
         function TreeView($element) {
@@ -3631,16 +3634,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-treeviewleftpanel-module/thumbsView',["require", "exports", "../../utils", "../coreplayer-shared-module/baseExtension", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/baseView", "../coreplayer-shared-module/thumb"], function(require, exports, __utils__, __baseExtension__, __extension__, __baseView__, __Thumb__) {
-    var utils = __utils__;
-    var baseExtension = __baseExtension__;
-    var extension = __extension__;
-    
-    var baseView = __baseView__;
-    
-    
-    var Thumb = __Thumb__;
-
+define('modules/coreplayer-treeviewleftpanel-module/thumbsView',["require", "exports", "../../utils", "../coreplayer-shared-module/baseExtension", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/baseView"], function(require, exports, utils, baseExtension, extension, baseView) {
     var ThumbsView = (function (_super) {
         __extends(ThumbsView, _super);
         function ThumbsView($element) {
@@ -3665,7 +3659,7 @@ define('modules/coreplayer-treeviewleftpanel-module/thumbsView',["require", "exp
 
             $.templates({
                 thumbsTemplate: '<div class="thumb" data-src="{{>url}}" data-visible="{{>visible}}">\
-                                <div class="wrap" style="height:{{>height}}px"></div>\
+                                <div class="wrap" style="height:{{>height + ~extraHeight()}}px"></div>\
                                 <span class="index">{{:#index + 1}}</span>\
                                 <span class="label">{{>label}}&nbsp;</span>\
                             </div>\
@@ -3674,9 +3668,14 @@ define('modules/coreplayer-treeviewleftpanel-module/thumbsView',["require", "exp
                             {{/if}}'
             });
 
+            var extraHeight = this.options.thumbsExtraHeight;
+
             $.views.helpers({
                 isEven: function (num) {
                     return (num % 2 == 0) ? true : false;
+                },
+                extraHeight: function () {
+                    return extraHeight;
                 }
             });
 
@@ -3793,7 +3792,7 @@ define('modules/coreplayer-treeviewleftpanel-module/thumbsView',["require", "exp
                 $(this.$thumbs).find('span.index').hide();
                 $(this.$thumbs).find('span.label').hide();
             } else {
-                if ((this.extension).getMode() == extension.Extension.PAGE_MODE) {
+                if (this.extension.getMode() == extension.Extension.PAGE_MODE) {
                     $(this.$thumbs).find('span.index').hide();
                     $(this.$thumbs).find('span.label').show();
                 } else {
@@ -3820,7 +3819,7 @@ define('modules/coreplayer-treeviewleftpanel-module/thumbsView',["require", "exp
             this.$selectedThumb.addClass('selected');
 
             if (this.lastThumbClickedIndex != index) {
-                var scrollTop = this.$element.scrollTop() + this.$selectedThumb.position().top;
+                var scrollTop = this.$element.scrollTop() + this.$selectedThumb.position().top - (this.$selectedThumb.height() / 2);
                 this.$element.scrollTop(scrollTop);
             }
 
@@ -3842,15 +3841,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel',["require", "exports", "../coreplayer-shared-module/leftPanel", "../../utils", "./treeView", "./thumbsView", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/baseExtension"], function(require, exports, __baseLeft__, __utils__, __tree__, __thumbs__, __extension__, __baseExtension__) {
-    var baseLeft = __baseLeft__;
-    var utils = __utils__;
-    var tree = __tree__;
-    var thumbs = __thumbs__;
-    
-    var extension = __extension__;
-    var baseExtension = __baseExtension__;
-
+define('modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel',["require", "exports", "../coreplayer-shared-module/leftPanel", "../../utils", "./treeView", "./thumbsView", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/baseExtension"], function(require, exports, baseLeft, utils, tree, thumbs, extension, baseExtension) {
     var TreeViewLeftPanel = (function (_super) {
         __extends(TreeViewLeftPanel, _super);
         function TreeViewLeftPanel($element) {
@@ -3941,35 +3932,12 @@ define('modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel',["require
                 if (!treeEnabled || !thumbsEnabled)
                     this.$tabs.hide();
 
-                if (thumbsEnabled && this.defaultToThumbsView()) {
-                    this.$tabs.hide();
+                if (thumbsEnabled && this.provider.defaultToThumbsView()) {
                     this.openThumbsView();
                 } else if (treeEnabled) {
                     this.openTreeView();
                 }
             }
-        };
-
-        TreeViewLeftPanel.prototype.defaultToThumbsView = function () {
-            var manifestType = this.provider.getManifestType();
-
-            switch (manifestType) {
-                case 'archive':
-                    return true;
-                case 'boundmanuscript':
-                    return true;
-                case 'artwork':
-                    return true;
-            }
-
-            var sequenceType = this.provider.getSequenceType();
-
-            switch (sequenceType) {
-                case 'application-pdf':
-                    return true;
-            }
-
-            return false;
         };
 
         TreeViewLeftPanel.prototype.openTreeView = function () {
@@ -3985,7 +3953,7 @@ define('modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel',["require
 
             setTimeout(function () {
                 var structure = _this.provider.getStructureByCanvasIndex(_this.provider.canvasIndex);
-                if (_this.treeView && structure.treeNode)
+                if (_this.treeView && structure && structure.treeNode)
                     _this.treeView.selectNode(structure.treeNode);
             }, 1);
 
@@ -4026,8 +3994,8 @@ define('modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel',["require
         TreeViewLeftPanel.prototype.resize = function () {
             _super.prototype.resize.call(this);
 
-            this.$tabsContent.actualHeight(this.$main.height() - this.$tabs.outerHeight());
-            this.$views.actualHeight(this.$tabsContent.height() - this.$options.outerHeight());
+            this.$tabsContent.height(this.$main.height() - (this.$tabs.is(':visible') ? this.$tabs.height() : 0) - this.$tabsContent.verticalPadding());
+            this.$views.height(this.$tabsContent.height() - this.$options.height());
         };
         TreeViewLeftPanel.OPEN_TREE_VIEW = 'leftPanel.onOpenTreeView';
         TreeViewLeftPanel.OPEN_THUMBS_VIEW = 'leftPanel.onOpenThumbsView';
@@ -4042,11 +4010,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/centerPanel',["require", "exports", "./shell", "./baseView"], function(require, exports, __shell__, __baseView__) {
-    var shell = __shell__;
-    var baseView = __baseView__;
-    
-
+define('modules/coreplayer-shared-module/centerPanel',["require", "exports", "./shell", "./baseView"], function(require, exports, shell, baseView) {
     var CenterPanel = (function (_super) {
         __extends(CenterPanel, _super);
         function CenterPanel($element) {
@@ -4095,13 +4059,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["require", "exports", "../coreplayer-shared-module/baseProvider", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/centerPanel", "../../utils"], function(require, exports, __baseProvider__, __extension__, __baseCenter__, __utils__) {
-    
-    var baseProvider = __baseProvider__;
-    var extension = __extension__;
-    var baseCenter = __baseCenter__;
-    var utils = __utils__;
-
+define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["require", "exports", "../coreplayer-shared-module/baseProvider", "../../extensions/coreplayer-seadragon-extension/extension", "../coreplayer-shared-module/centerPanel", "../../utils"], function(require, exports, baseProvider, extension, baseCenter, utils) {
     var SeadragonCenterPanel = (function (_super) {
         __extends(SeadragonCenterPanel, _super);
         function SeadragonCenterPanel($element) {
@@ -4124,12 +4082,15 @@ define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["r
 
             OpenSeadragon.DEFAULT_SETTINGS.autoHideControls = true;
 
-            var prefixUrl = (window.DEBUG) ? 'modules/coreplayer-seadragoncenterpanel-module/img/' : 'img/coreplayer-seadragoncenterpanel-module/';
+            var prefixUrl = (window.DEBUG) ? 'modules/coreplayer-seadragoncenterpanel-module/img/' : 'themes/' + this.provider.config.options.theme + '/img/coreplayer-seadragoncenterpanel-module/';
 
             this.viewer = OpenSeadragon({
                 id: "viewer",
                 showNavigationControl: true,
                 showNavigator: true,
+                showRotationControl: true,
+                showHomeControl: false,
+                showFullPageControl: false,
                 defaultZoomLevel: this.options.defaultZoomLevel || 0,
                 navigatorPosition: 'BOTTOM_RIGHT',
                 prefixUrl: prefixUrl,
@@ -4146,25 +4107,13 @@ define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["r
                         HOVER: 'zoom_out.png',
                         DOWN: 'zoom_out.png'
                     },
-                    home: {
-                        REST: 'pixel.gif',
-                        GROUP: 'pixel.gif',
-                        HOVER: 'pixel.gif',
-                        DOWN: 'pixel.gif'
+                    rotateright: {
+                        REST: 'rotate_right.png',
+                        GROUP: 'rotate_right.png',
+                        HOVER: 'rotate_right.png',
+                        DOWN: 'rotate_right.png'
                     },
-                    fullpage: {
-                        REST: 'pixel.gif',
-                        GROUP: 'pixel.gif',
-                        HOVER: 'pixel.gif',
-                        DOWN: 'pixel.gif'
-                    },
-                    previous: {
-                        REST: 'pixel.gif',
-                        GROUP: 'pixel.gif',
-                        HOVER: 'pixel.gif',
-                        DOWN: 'pixel.gif'
-                    },
-                    next: {
+                    rotateleft: {
                         REST: 'pixel.gif',
                         GROUP: 'pixel.gif',
                         HOVER: 'pixel.gif',
@@ -4203,6 +4152,10 @@ define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["r
 
                     $.publish(SeadragonCenterPanel.NEXT);
                 });
+
+                $('.paging.btn.next').on('pointerdown', function () {
+                    console.log('hover');
+                });
             }
             ;
 
@@ -4230,7 +4183,21 @@ define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["r
                 $.publish(SeadragonCenterPanel.SEADRAGON_ANIMATION_FINISH, [viewer]);
             });
 
+            $('div[title="Rotate right"]').on('click', function () {
+                $.publish(SeadragonCenterPanel.SEADRAGON_ROTATION, [_this.viewer.viewport.getRotation()]);
+            });
+
             this.title = this.extension.provider.getTitle();
+
+            var browser = window.BrowserDetect.browser;
+
+            if (browser == 'Firefox') {
+                if (this.provider.isMultiCanvas()) {
+                    this.$prevButton.hide();
+                    this.$nextButton.hide();
+                }
+                $('div[title="Rotate right"]').hide();
+            }
         };
 
         SeadragonCenterPanel.prototype.viewerOpen = function () {
@@ -4251,13 +4218,13 @@ define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["r
             }
 
             if (!this.currentBounds) {
-                var initialRotation = this.extension.getParam(baseProvider.params.rotation);
+                var initialRotation = this.extension.getParam(3 /* rotation */);
 
                 if (initialRotation) {
                     this.viewer.viewport.setRotation(parseInt(initialRotation));
                 }
 
-                var initialBounds = this.extension.getParam(baseProvider.params.zoom);
+                var initialBounds = this.extension.getParam(2 /* zoom */);
 
                 if (initialBounds) {
                     initialBounds = this.deserialiseBounds(initialBounds);
@@ -4354,11 +4321,12 @@ define('modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel',["r
                 this.$nextButton.css('top', (this.$content.height() - this.$nextButton.height()) / 2);
             }
         };
-        SeadragonCenterPanel.SEADRAGON_OPEN = 'center.open';
-        SeadragonCenterPanel.SEADRAGON_RESIZE = 'center.resize';
-        SeadragonCenterPanel.SEADRAGON_ANIMATION_START = 'center.animationstart';
-        SeadragonCenterPanel.SEADRAGON_ANIMATION = 'center.animation';
-        SeadragonCenterPanel.SEADRAGON_ANIMATION_FINISH = 'center.animationfinish';
+        SeadragonCenterPanel.SEADRAGON_OPEN = 'center.onOpen';
+        SeadragonCenterPanel.SEADRAGON_RESIZE = 'center.onResize';
+        SeadragonCenterPanel.SEADRAGON_ANIMATION_START = 'center.onAnimationStart';
+        SeadragonCenterPanel.SEADRAGON_ANIMATION = 'center.onAnimation';
+        SeadragonCenterPanel.SEADRAGON_ANIMATION_FINISH = 'center.onAnimationfinish';
+        SeadragonCenterPanel.SEADRAGON_ROTATION = 'center.onRotation';
         SeadragonCenterPanel.PREV = 'center.onPrev';
         SeadragonCenterPanel.NEXT = 'center.onNext';
         return SeadragonCenterPanel;
@@ -4372,12 +4340,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/rightPanel',["require", "exports", "./baseExpandPanel"], function(require, exports, __baseExpandPanel__) {
-    
-    
-    
-    var baseExpandPanel = __baseExpandPanel__;
-
+define('modules/coreplayer-shared-module/rightPanel',["require", "exports", "./baseExpandPanel"], function(require, exports, baseExpandPanel) {
     var RightPanel = (function (_super) {
         __extends(RightPanel, _super);
         function RightPanel($element) {
@@ -4387,6 +4350,14 @@ define('modules/coreplayer-shared-module/rightPanel',["require", "exports", "./b
             _super.prototype.create.call(this);
 
             this.$element.width(this.options.panelCollapsedWidth);
+        };
+
+        RightPanel.prototype.init = function () {
+            _super.prototype.init.call(this);
+
+            if (this.options.panelOpen && this.provider.isHomeDomain) {
+                this.toggle();
+            }
         };
 
         RightPanel.prototype.getTargetWidth = function () {
@@ -4427,9 +4398,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel',["require", "exports", "../coreplayer-shared-module/rightPanel"], function(require, exports, __baseRight__) {
-    var baseRight = __baseRight__;
-
+define('modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel',["require", "exports", "../coreplayer-shared-module/rightPanel"], function(require, exports, baseRight) {
     var MoreInfoRightPanel = (function (_super) {
         __extends(MoreInfoRightPanel, _super);
         function MoreInfoRightPanel($element) {
@@ -4444,6 +4413,9 @@ define('modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel',["requi
                                            <div class="header"></div>\
                                            <div class="text"></div>\
                                        </div>');
+
+            this.$items = $('<div class="items"></div>');
+            this.$main.append(this.$items);
         };
 
         MoreInfoRightPanel.prototype.toggleComplete = function () {
@@ -4473,7 +4445,7 @@ define('modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel',["requi
             }
 
             _.each(data, function (item) {
-                _this.$main.append(_this.buildItem(item, 130));
+                _this.$items.append(_this.buildItem(item, 130));
             });
         };
 
@@ -4509,16 +4481,11 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-shared-module/footerPanel',["require", "exports", "../../utils", "./baseExtension", "./baseView"], function(require, exports, __utils__, __baseExtension__, __baseView__) {
-    var utils = __utils__;
-    var baseExtension = __baseExtension__;
-    
-    var baseView = __baseView__;
-
+define('modules/coreplayer-shared-module/footerPanel',["require", "exports", "../../utils", "./baseExtension", "./baseView"], function(require, exports, utils, baseExtension, baseView) {
     var FooterPanel = (function (_super) {
         __extends(FooterPanel, _super);
         function FooterPanel($element) {
-            _super.call(this, $element, true, false);
+            _super.call(this, $element);
         }
         FooterPanel.prototype.create = function () {
             var _this = this;
@@ -4530,13 +4497,13 @@ define('modules/coreplayer-shared-module/footerPanel',["require", "exports", "..
                 _this.toggleFullScreen();
             });
 
-            this.$options = utils.Utils.createDiv('options');
+            this.$options = $('<div class="options"></div>');
             this.$element.append(this.$options);
 
-            this.$embedButton = $('<a href="#" class="imageButton embed" title="' + this.content.embed + '"></a>');
+            this.$embedButton = $('<a href="#" class="imageBtn embed" title="' + this.content.embed + '"></a>');
             this.$options.append(this.$embedButton);
 
-            this.$fullScreenBtn = $('<a href="#" class="imageButton fullScreen" title="' + this.content.fullScreen + '"></a>');
+            this.$fullScreenBtn = $('<a href="#" class="imageBtn fullScreen" title="' + this.content.fullScreen + '"></a>');
             this.$options.append(this.$fullScreenBtn);
 
             this.$embedButton.on('click', function (e) {
@@ -4550,11 +4517,15 @@ define('modules/coreplayer-shared-module/footerPanel',["require", "exports", "..
                 $.publish(baseExtension.BaseExtension.TOGGLE_FULLSCREEN);
             });
 
+            if (!utils.Utils.getBool(this.options.embedEnabled, true)) {
+                this.$embedButton.hide();
+            }
+
             if (this.provider.isLightbox) {
                 this.$fullScreenBtn.addClass('lightbox');
             }
 
-            if (this.options.minimiseButtons === true) {
+            if (utils.Utils.getBool(this.options.minimiseButtons, false)) {
                 this.$options.addClass('minimiseButtons');
             }
         };
@@ -4571,10 +4542,6 @@ define('modules/coreplayer-shared-module/footerPanel',["require", "exports", "..
 
         FooterPanel.prototype.resize = function () {
             _super.prototype.resize.call(this);
-
-            this.$element.css({
-                'top': this.extension.height() - this.$element.height()
-            });
         };
         FooterPanel.EMBED = 'footer.onEmbed';
         return FooterPanel;
@@ -4588,12 +4555,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-dialogues-module/embedDialogue',["require", "exports", "../../utils", "../coreplayer-shared-module/dialogue"], function(require, exports, __utils__, __dialogue__) {
-    
-    
-    var utils = __utils__;
-    var dialogue = __dialogue__;
-
+define('modules/coreplayer-dialogues-module/embedDialogue',["require", "exports", "../../utils", "../coreplayer-shared-module/dialogue"], function(require, exports, utils, dialogue) {
     var EmbedDialogue = (function (_super) {
         __extends(EmbedDialogue, _super);
         function EmbedDialogue($element) {
@@ -4766,13 +4728,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-seadragon-extension/embedDialogue',["require", "exports", "../../modules/coreplayer-dialogues-module/embedDialogue", "../../modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel"], function(require, exports, __embed__, __center__) {
-    
-    var embed = __embed__;
-    var center = __center__;
-    
-    
-
+define('extensions/coreplayer-seadragon-extension/embedDialogue',["require", "exports", "../../modules/coreplayer-dialogues-module/embedDialogue", "../../modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel"], function(require, exports, embed, center) {
     var EmbedDialogue = (function (_super) {
         __extends(EmbedDialogue, _super);
         function EmbedDialogue($element) {
@@ -4794,9 +4750,10 @@ define('extensions/coreplayer-seadragon-extension/embedDialogue',["require", "ex
         };
 
         EmbedDialogue.prototype.formatCode = function () {
-            var zoom = (this.extension).getViewerBounds();
+            var zoom = this.extension.getViewerBounds();
+            var rotation = this.extension.getViewerRotation();
 
-            this.code = (this.provider).getEmbedScript(this.provider.canvasIndex, zoom, this.currentWidth, this.currentHeight, this.options.embedTemplate);
+            this.code = this.provider.getEmbedScript(this.provider.canvasIndex, zoom, this.currentWidth, this.currentHeight, rotation, this.options.embedTemplate);
 
             this.$code.val(this.code);
         };
@@ -4828,29 +4785,12 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-seadragon-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/coreplayer-treeviewleftpanel-module/thumbsView", "../../modules/coreplayer-treeviewleftpanel-module/treeView", "../../modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel", "../../modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/coreplayer-shared-module/footerPanel", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../extensions/coreplayer-seadragon-extension/embedDialogue", "../../coreplayer-seadragon-extension-dependencies"], function(require, exports, __baseExtension__, __utils__, __baseProvider__, __shell__, __header__, __left__, __thumbsView__, __treeView__, __center__, __right__, __footer__, __help__, __embed__, __dependencies__) {
-    var baseExtension = __baseExtension__;
-    var utils = __utils__;
-    var baseProvider = __baseProvider__;
-    
-    var shell = __shell__;
-    var header = __header__;
-    var left = __left__;
-    var thumbsView = __thumbsView__;
-    var treeView = __treeView__;
-    var center = __center__;
-    var right = __right__;
-    var footer = __footer__;
-    var help = __help__;
-    var embed = __embed__;
-    
-    
-    var dependencies = __dependencies__;
-
+define('extensions/coreplayer-seadragon-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/coreplayer-treeviewleftpanel-module/thumbsView", "../../modules/coreplayer-treeviewleftpanel-module/treeView", "../../modules/coreplayer-seadragoncenterpanel-module/seadragonCenterPanel", "../../modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/coreplayer-shared-module/footerPanel", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../extensions/coreplayer-seadragon-extension/embedDialogue", "../../coreplayer-seadragon-extension-dependencies"], function(require, exports, baseExtension, utils, baseProvider, shell, header, left, thumbsView, treeView, center, right, footer, help, embed, dependencies) {
     var Extension = (function (_super) {
         __extends(Extension, _super);
         function Extension(provider) {
             _super.call(this, provider);
+            this.currentRotation = 0;
         }
         Extension.prototype.create = function (overrideDependencies) {
             var _this = this;
@@ -4901,7 +4841,12 @@ define('extensions/coreplayer-seadragon-extension/extension',["require", "export
             });
 
             $.subscribe(center.SeadragonCenterPanel.SEADRAGON_ANIMATION_FINISH, function (e, viewer) {
-                _this.setParam(baseProvider.params.zoom, _this.centerPanel.serialiseBounds(_this.centerPanel.currentBounds));
+                _this.setParam(2 /* zoom */, _this.centerPanel.serialiseBounds(_this.centerPanel.currentBounds));
+            });
+
+            $.subscribe(center.SeadragonCenterPanel.SEADRAGON_ROTATION, function (e, rotation) {
+                _this.currentRotation = rotation;
+                _this.setParam(3 /* rotation */, rotation);
             });
 
             $.subscribe(center.SeadragonCenterPanel.PREV, function (e) {
@@ -4929,7 +4874,7 @@ define('extensions/coreplayer-seadragon-extension/extension',["require", "export
                 var canvasIndex;
 
                 if (!that.provider.isReload) {
-                    canvasIndex = parseInt(that.getParam(baseProvider.params.canvasIndex)) || 0;
+                    canvasIndex = parseInt(that.getParam(1 /* canvasIndex */)) || 0;
                 }
 
                 that.viewPage(canvasIndex || 0);
@@ -4948,7 +4893,11 @@ define('extensions/coreplayer-seadragon-extension/extension',["require", "export
             }
 
             this.centerPanel = new center.SeadragonCenterPanel(shell.Shell.$centerPanel);
-            this.rightPanel = new right.MoreInfoRightPanel(shell.Shell.$rightPanel);
+
+            if (this.isRightPanelEnabled()) {
+                this.rightPanel = new right.MoreInfoRightPanel(shell.Shell.$rightPanel);
+            }
+
             this.footerPanel = new footer.FooterPanel(shell.Shell.$footerPanel);
 
             this.$helpDialogue = utils.Utils.createDiv('overlay help');
@@ -4962,17 +4911,25 @@ define('extensions/coreplayer-seadragon-extension/extension',["require", "export
             if (this.isLeftPanelEnabled()) {
                 this.leftPanel.init();
             }
+
+            if (this.isRightPanelEnabled()) {
+                this.rightPanel.init();
+            }
         };
 
         Extension.prototype.setParams = function () {
             if (!this.provider.isHomeDomain)
                 return;
 
-            this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+            this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
         };
 
         Extension.prototype.isLeftPanelEnabled = function () {
             return utils.Utils.getBool(this.provider.config.options.leftPanelEnabled, true) && this.provider.isMultiCanvas();
+        };
+
+        Extension.prototype.isRightPanelEnabled = function () {
+            return utils.Utils.getBool(this.provider.config.options.rightPanelEnabled, true);
         };
 
         Extension.prototype.viewPage = function (canvasIndex) {
@@ -4980,11 +4937,11 @@ define('extensions/coreplayer-seadragon-extension/extension',["require", "export
             this.viewCanvas(canvasIndex, function () {
                 var canvas = _this.provider.getCanvasByIndex(canvasIndex);
 
-                var uri = (_this.provider).getImageUri(canvas);
+                var uri = _this.provider.getImageUri(canvas);
 
                 $.publish(Extension.OPEN_MEDIA, [uri]);
 
-                _this.setParam(baseProvider.params.canvasIndex, canvasIndex);
+                _this.setParam(1 /* canvasIndex */, canvasIndex);
             });
         };
 
@@ -5014,6 +4971,13 @@ define('extensions/coreplayer-seadragon-extension/extension',["require", "export
                 return this.centerPanel.serialiseBounds(bounds);
 
             return "";
+        };
+
+        Extension.prototype.getViewerRotation = function () {
+            if (!this.centerPanel)
+                return;
+
+            return this.currentRotation;
         };
 
         Extension.prototype.viewStructure = function (path) {
@@ -5070,12 +5034,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["require", "exports", "../coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../coreplayer-treeviewleftpanel-module/treeView", "../../extensions/wellcomeplayer-seadragon-extension/journalSortType"], function(require, exports, __basePanel__, __tree__, __journalSortType__) {
-    var basePanel = __basePanel__;
-    
-    var tree = __tree__;
-    var journalSortType = __journalSortType__;
-
+define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["require", "exports", "../coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../coreplayer-treeviewleftpanel-module/treeView", "../../extensions/wellcomeplayer-seadragon-extension/journalSortType"], function(require, exports, basePanel, tree, journalSortType) {
     var TreeViewLeftPanel = (function (_super) {
         __extends(TreeViewLeftPanel, _super);
         function TreeViewLeftPanel($element) {
@@ -5096,20 +5055,20 @@ define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["req
             this.$buttonGroup = $('<div class="btn-group"></div>');
             this.$treeViewOptions.append(this.$buttonGroup);
 
-            this.$sortByDateButton = $('<button class="button">' + this.content.date + '</button>');
+            this.$sortByDateButton = $('<button class="btn">' + this.content.date + '</button>');
             this.$buttonGroup.append(this.$sortByDateButton);
 
-            this.$sortByVolumeButton = $('<button class="button">' + this.content.volume + '</button>');
+            this.$sortByVolumeButton = $('<button class="btn">' + this.content.volume + '</button>');
             this.$buttonGroup.append(this.$sortByVolumeButton);
 
             this.$sortByDateButton.on('click', function () {
-                _this.treeView.rootNode = _this.provider.getJournalTree(journalSortType.JournalSortType.date);
+                _this.treeView.rootNode = _this.provider.getJournalTree(0 /* date */);
                 _this.treeView.dataBind();
                 _this.selectCurrentTreeNode();
             });
 
             this.$sortByVolumeButton.on('click', function () {
-                _this.treeView.rootNode = _this.provider.getJournalTree(journalSortType.JournalSortType.volume);
+                _this.treeView.rootNode = _this.provider.getJournalTree(1 /* volume */);
                 _this.treeView.dataBind();
                 _this.selectCurrentTreeNode();
             });
@@ -5126,7 +5085,7 @@ define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["req
 
         TreeViewLeftPanel.prototype.updateTreeView = function () {
             if (this.isPeriodical()) {
-                this.treeView.rootNode = this.provider.getJournalTree(journalSortType.JournalSortType.date);
+                this.treeView.rootNode = this.provider.getJournalTree(0 /* date */);
             } else {
                 this.treeView.rootNode = this.provider.getTree();
             }
@@ -5168,6 +5127,8 @@ define('modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel',["req
 
         TreeViewLeftPanel.prototype.selectCurrentTreeNode = function () {
             var structure = this.provider.sequence.structure;
+            if (!structure)
+                return;
             if (this.treeView && structure.treeNode)
                 this.treeView.selectNode(structure.treeNode);
         };
@@ -5193,13 +5154,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-dialogues-module/conditionsDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, __dialogue__) {
-    
-    
-    
-    
-    var dialogue = __dialogue__;
-
+define('modules/wellcomeplayer-dialogues-module/conditionsDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, dialogue) {
     var ConditionsDialogue = (function (_super) {
         __extends(ConditionsDialogue, _super);
         function ConditionsDialogue($element) {
@@ -5236,7 +5191,7 @@ define('modules/wellcomeplayer-dialogues-module/conditionsDialogue',["require", 
 
             this.$message.html(licenseText);
 
-            this.$message.find('a').prop('target', '_blank');
+            this.$message.targetBlank();
 
             this.$element.hide();
         };
@@ -5257,13 +5212,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["require", "exports", "../coreplayer-shared-module/rightPanel", "../wellcomeplayer-dialogues-module/conditionsDialogue"], function(require, exports, __baseRight__, __conditions__) {
-    
-    var baseRight = __baseRight__;
-    
-    var conditions = __conditions__;
-    
-
+define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["require", "exports", "../coreplayer-shared-module/rightPanel", "../wellcomeplayer-dialogues-module/conditionsDialogue"], function(require, exports, baseRight, conditions) {
     var MoreInfoRightPanel = (function (_super) {
         __extends(MoreInfoRightPanel, _super);
         function MoreInfoRightPanel($element) {
@@ -5278,6 +5227,9 @@ define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["r
                                            <div class="header"></div>\
                                            <div class="text"></div>\
                                        </div>');
+
+            this.$items = $('<div class="items"></div>');
+            this.$main.append(this.$items);
         };
 
         MoreInfoRightPanel.prototype.toggleComplete = function () {
@@ -5292,13 +5244,13 @@ define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["r
             var _this = this;
             this.$main.addClass('loading');
 
-            if ((this.provider).moreInfo) {
+            if (this.provider.moreInfo) {
                 this.displayInfo();
             } else {
-                var uri = (this.provider).getMoreInfoUri();
+                var uri = this.provider.getMoreInfoUri();
 
                 $.getJSON(uri, function (data) {
-                    (_this.provider).moreInfo = data;
+                    _this.provider.moreInfo = data;
 
                     _this.displayInfo();
                 });
@@ -5309,9 +5261,9 @@ define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["r
             var _this = this;
             this.$main.removeClass('loading');
 
-            this.$main.empty();
+            this.$items.empty();
 
-            var data = (this.provider).moreInfo;
+            var data = this.provider.moreInfo;
 
             $.each(data, function (key, value) {
                 if (value && !value.startsWith('http:')) {
@@ -5327,7 +5279,7 @@ define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["r
                         case "repositorylogo":
                             break;
                         default:
-                            _this.$main.append(_this.buildItem({
+                            _this.$items.append(_this.buildItem({
                                 "label": key,
                                 "value": value
                             }, 130));
@@ -5339,7 +5291,7 @@ define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["r
             var logoUri = data["RepositoryLogo"];
 
             if (logoUri) {
-                this.$main.append('<img src="' + logoUri + '" />');
+                this.$items.append('<img src="' + logoUri + '" />');
             }
 
             var catalogueRecordKey = "View full catalogue record";
@@ -5347,11 +5299,11 @@ define('modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel',["r
 
             if (url) {
                 var $catalogueLink = $('<a href="' + url + '" target="_blank" class="action catalogue">' + catalogueRecordKey + '</a>');
-                this.$main.append($catalogueLink);
+                this.$items.append($catalogueLink);
             }
 
             var $conditionsLink = $('<a href="#" class="action conditions">' + this.content.conditions + '</a>');
-            this.$main.append($conditionsLink);
+            this.$items.append($conditionsLink);
 
             $conditionsLink.on('click', function (e) {
                 e.preventDefault();
@@ -5393,13 +5345,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-extendedfooterpanel-module/footerPanel',["require", "exports", "../coreplayer-shared-module/footerPanel"], function(require, exports, __baseFooter__) {
-    var baseFooter = __baseFooter__;
-    
-    
-    
-    
-
+define('modules/wellcomeplayer-extendedfooterpanel-module/footerPanel',["require", "exports", "../coreplayer-shared-module/footerPanel"], function(require, exports, baseFooter) {
     var FooterPanel = (function (_super) {
         __extends(FooterPanel, _super);
         function FooterPanel($element) {
@@ -5410,10 +5356,10 @@ define('modules/wellcomeplayer-extendedfooterpanel-module/footerPanel',["require
 
             _super.prototype.create.call(this);
 
-            this.$saveButton = $('<a class="imageButton save"  title="' + this.content.save + '"></a>');
+            this.$saveButton = $('<a class="imageBtn save"  title="' + this.content.save + '"></a>');
             this.$options.prepend(this.$saveButton);
 
-            this.$downloadButton = $('<a class="imageButton download" title="' + this.content.download + '"></a>');
+            this.$downloadButton = $('<a class="imageBtn download" title="' + this.content.download + '"></a>');
             this.$options.prepend(this.$downloadButton);
 
             this.$downloadButton.on('click', function (e) {
@@ -5428,22 +5374,22 @@ define('modules/wellcomeplayer-extendedfooterpanel-module/footerPanel',["require
                 $.publish(FooterPanel.SAVE);
             });
 
-            this.$embedButton.hide();
-
-            if (this.provider.manifest.extensions && this.provider.manifest.extensions.isAllOpen) {
+            if (this.extension.isEmbedEnabled()) {
                 this.$embedButton.show();
+            } else {
+                this.$embedButton.hide();
             }
 
-            this.$saveButton.hide();
-
-            if ((this.extension).isSaveToLightboxEnabled()) {
+            if (this.extension.isSaveToLightboxEnabled()) {
                 this.$saveButton.show();
+            } else {
+                this.$saveButton.hide();
             }
 
-            this.$downloadButton.hide();
-
-            if ((this.extension).isDownloadEnabled()) {
+            if (this.extension.isDownloadEnabled()) {
                 this.$downloadButton.show();
+            } else {
+                this.$downloadButton.hide();
             }
         };
 
@@ -5529,7 +5475,7 @@ define('modules/wellcomeplayer-searchfooterpanel-module/autocomplete',["require"
             });
 
             $(document).on('mouseup', function (e) {
-                if (_this.$searchResultsList.parent().has(e.target).length === 0) {
+                if (_this.$searchResultsList.parent().has($(e.target)[0]).length === 0) {
                     _this.clearResults();
                     _this.hideResults();
                 }
@@ -5681,17 +5627,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require", "exports", "../../extensions/coreplayer-seadragon-extension/extension", "../../extensions/wellcomeplayer-seadragon-extension/extension", "../coreplayer-shared-module/baseExtension", "../wellcomeplayer-extendedfooterpanel-module/footerPanel", "../../utils", "./autocomplete"], function(require, exports, __coreExtension__, __extension__, __baseExtension__, __footer__, __utils__, __AutoComplete__) {
-    var coreExtension = __coreExtension__;
-    var extension = __extension__;
-    var baseExtension = __baseExtension__;
-    var footer = __footer__;
-    var utils = __utils__;
-    
-    var AutoComplete = __AutoComplete__;
-    
-    
-
+define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require", "exports", "../../extensions/coreplayer-seadragon-extension/extension", "../../extensions/wellcomeplayer-seadragon-extension/extension", "../coreplayer-shared-module/baseExtension", "../wellcomeplayer-extendedfooterpanel-module/footerPanel", "../../utils", "./autocomplete"], function(require, exports, coreExtension, extension, baseExtension, footer, utils, AutoComplete) {
     var FooterPanel = (function (_super) {
         __extends(FooterPanel, _super);
         function FooterPanel($element) {
@@ -5838,7 +5774,7 @@ define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require",
                 this.$element.addClass('min');
             }
 
-            new AutoComplete(this.$searchText, (this.provider).getAutoCompleteUri(), function (terms) {
+            new AutoComplete(this.$searchText, this.provider.getAutoCompleteUri(), function (terms) {
                 _this.search(terms);
             });
         };
@@ -5878,7 +5814,7 @@ define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require",
         };
 
         FooterPanel.prototype.positionSearchResultPlacemarkers = function () {
-            var results = (this.extension).searchResults;
+            var results = this.extension.searchResults;
 
             if (!results)
                 return;
@@ -5982,7 +5918,7 @@ define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require",
 
             that.$placemarkerDetailsTop.html(title);
 
-            var result = (that.extension).searchResults[elemIndex];
+            var result = that.extension.searchResults[elemIndex];
 
             var terms = utils.Utils.ellipsis(that.terms, 20);
 
@@ -6065,7 +6001,7 @@ define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require",
         };
 
         FooterPanel.prototype.clearSearchResults = function () {
-            (this.extension).searchResults = null;
+            this.extension.searchResults = null;
 
             var placemarkers = this.getSearchResultPlacemarkers();
             placemarkers.remove();
@@ -6091,10 +6027,12 @@ define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require",
             this.setPageMarkerPosition();
             this.setPlacemarkerLabel();
 
-            if ((this.extension).hasPermissionToViewCurrentItem()) {
-                this.$downloadButton.show();
-            } else {
-                this.$downloadButton.hide();
+            if (this.extension.isDownloadEnabled()) {
+                if (this.extension.hasPermissionToViewCurrentItem()) {
+                    this.$downloadButton.show();
+                } else {
+                    this.$downloadButton.hide();
+                }
             }
         };
 
@@ -6103,7 +6041,7 @@ define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require",
         };
 
         FooterPanel.prototype.setPlacemarkerLabel = function () {
-            var mode = (this.extension).getMode();
+            var mode = this.extension.getMode();
 
             var label = this.content.displaying;
             var index = this.provider.canvasIndex;
@@ -6159,7 +6097,7 @@ define('modules/wellcomeplayer-searchfooterpanel-module/footerPanel',["require",
         FooterPanel.prototype.resize = function () {
             _super.prototype.resize.call(this);
 
-            if ((this.extension).searchResults) {
+            if (this.extension.searchResults) {
                 this.positionSearchResultPlacemarkers();
             }
 
@@ -6193,14 +6131,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, __dialogue__) {
-    
-    
-    
-    
-    var dialogue = __dialogue__;
-    
-
+define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, dialogue) {
     var LoginDialogue = (function (_super) {
         __extends(LoginDialogue, _super);
         function LoginDialogue($element) {
@@ -6241,6 +6172,7 @@ define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "expo
                 if (that.allowGuestLogin) {
                     that.$guestLogin.show();
                     that.$message.addClass('guest');
+                    $.publish(LoginDialogue.VIEW_TERMS);
                 } else {
                     that.$libraryLogin.show();
                     that.$message.removeClass('guest');
@@ -6284,7 +6216,7 @@ define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "expo
                 <a class="nextItem" href="#"></a>\
                 <div class="guestLogin">\
                     <a class="viewTerms" href="#"></a>\
-                    <a class="acceptTerms button" href="#" target="_parent"></a>\
+                    <a class="acceptTerms btn btn-primary" href="#" target="_parent"></a>\
                 </div>\
                 <div class="libraryLogin">\
                     <a class="library" href="/handlers/auth/CasSSO.ashx"></a>\
@@ -6335,6 +6267,10 @@ define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "expo
                 $.publish(LoginDialogue.NEXT_ITEM, [_this.requestedIndex]);
             });
 
+            this.$acceptTermsButton.click(function (e) {
+                $.publish(LoginDialogue.ACCEPT_TERMS);
+            });
+
             this.$viewTermsButton.click(function (e) {
                 e.preventDefault();
 
@@ -6342,9 +6278,11 @@ define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "expo
                 _this.$message.addClass('loading');
                 _this.$message.load(_this.options.termsUri, function () {
                     _this.$message.removeClass('loading');
-                    _this.$message.find('a').prop('target', '_blank');
+                    _this.$message.targetBlank();
                     _this.$viewTermsButton.hide();
                 });
+
+                $.publish(LoginDialogue.VIEW_FULL_TERMS);
             });
 
             this.$libraryLoginButton.click(function (e) {
@@ -6394,7 +6332,10 @@ define('modules/wellcomeplayer-dialogues-module/loginDialogue',["require", "expo
         };
         LoginDialogue.SHOW_LOGIN_DIALOGUE = 'onShowLoginDialogue';
         LoginDialogue.HIDE_LOGIN_DIALOGUE = 'onHideLoginDialogue';
-        LoginDialogue.NEXT_ITEM = 'onNextItem';
+        LoginDialogue.VIEW_TERMS = 'login.onViewTerms';
+        LoginDialogue.VIEW_FULL_TERMS = 'login.onViewFullTerms';
+        LoginDialogue.ACCEPT_TERMS = 'login.onAcceptTerms';
+        LoginDialogue.NEXT_ITEM = 'login.onNextItem';
         LoginDialogue.LOGIN = 'onLogin';
         return LoginDialogue;
     })(dialogue.Dialogue);
@@ -6407,13 +6348,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-dialogues-module/restrictedFileDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, __dialogue__) {
-    
-    
-    
-    
-    var dialogue = __dialogue__;
-
+define('modules/wellcomeplayer-dialogues-module/restrictedFileDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, dialogue) {
     var RestrictedFileDialogue = (function (_super) {
         __extends(RestrictedFileDialogue, _super);
         function RestrictedFileDialogue($element) {
@@ -6491,14 +6426,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-dialogues-module/downloadDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, __dialogue__) {
-    
-    
-    
-    
-    var dialogue = __dialogue__;
-    
-
+define('modules/wellcomeplayer-dialogues-module/downloadDialogue',["require", "exports", "../coreplayer-shared-module/dialogue"], function(require, exports, dialogue) {
     var DownloadDialogue = (function (_super) {
         __extends(DownloadDialogue, _super);
         function DownloadDialogue($element) {
@@ -6545,10 +6473,10 @@ define('modules/wellcomeplayer-dialogues-module/downloadDialogue',["require", "e
             this.$buttonsContainer = $('<div class="buttons"></div>');
             this.$content.append(this.$buttonsContainer);
 
-            this.$previewButton = $('<a class="button" href="#">' + this.content.preview + '</a>');
+            this.$previewButton = $('<a class="btn btn-primary" href="#">' + this.content.preview + '</a>');
             this.$buttonsContainer.append(this.$previewButton);
 
-            this.$downloadButton = $('<a class="button" href="#">' + this.content.download + '</a>');
+            this.$downloadButton = $('<a class="btn btn-primary" href="#">' + this.content.download + '</a>');
             this.$buttonsContainer.append(this.$downloadButton);
 
             var that = this;
@@ -6561,19 +6489,19 @@ define('modules/wellcomeplayer-dialogues-module/downloadDialogue',["require", "e
 
                 switch (id) {
                     case 'currentViewAsJpg':
-                        window.open((that.extension).getCropUri(false));
+                        window.open(that.extension.getCropUri(false));
                         $.publish(DownloadDialogue.PREVIEW, ['currentViewAsJpg']);
                         break;
                     case 'wholeImageHighResAsJpg':
-                        window.open((that.provider).getImage(asset, true));
+                        window.open(that.provider.getImage(asset, true, false));
                         $.publish(DownloadDialogue.PREVIEW, ['wholeImageHighResAsJpg']);
                         break;
                     case 'wholeImageLowResAsJpg':
-                        window.open((that.provider).getImage(asset, false));
+                        window.open(that.provider.getImage(asset, false, false));
                         $.publish(DownloadDialogue.PREVIEW, ['wholeImageLowResAsJpg']);
                         break;
                     case 'entireDocumentAsPdf':
-                        window.open((that.provider).getPDF());
+                        window.open(that.provider.getPDF(false));
                         $.publish(DownloadDialogue.PREVIEW, ['entireDocumentAsPdf']);
                         break;
                 }
@@ -6589,20 +6517,20 @@ define('modules/wellcomeplayer-dialogues-module/downloadDialogue',["require", "e
 
                 switch (id) {
                     case 'currentViewAsJpg':
-                        var viewer = (that.extension).getViewer();
-                        window.open((that.provider).getCrop(asset, viewer, true));
+                        var viewer = that.extension.getViewer();
+                        window.open(that.provider.getCrop(asset, viewer, true));
                         $.publish(DownloadDialogue.DOWNLOAD, ['currentViewAsJpg']);
                         break;
                     case 'wholeImageHighResAsJpg':
-                        window.open((that.provider).getImage(asset, true, true));
+                        window.open(that.provider.getImage(asset, true, true));
                         $.publish(DownloadDialogue.DOWNLOAD, ['wholeImageHighResAsJpg']);
                         break;
                     case 'wholeImageLowResAsJpg':
-                        window.open((that.provider).getImage(asset, false, true));
+                        window.open(that.provider.getImage(asset, false, true));
                         $.publish(DownloadDialogue.DOWNLOAD, ['wholeImageLowResAsJpg']);
                         break;
                     case 'entireDocumentAsPdf':
-                        window.open((that.provider).getPDF(true));
+                        window.open(that.provider.getPDF(true));
                         $.publish(DownloadDialogue.DOWNLOAD, ['entireDocumentAsPdf']);
                         break;
                 }
@@ -6695,13 +6623,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/wellcomeplayer-seadragoncenterpanel-module/seadragonCenterPanel',["require", "exports", "../coreplayer-seadragoncenterpanel-module/seadragonCenterPanel"], function(require, exports, __baseCenter__) {
-    
-    
-    
-    var baseCenter = __baseCenter__;
-    
-
+define('modules/wellcomeplayer-seadragoncenterpanel-module/seadragonCenterPanel',["require", "exports", "../coreplayer-seadragoncenterpanel-module/seadragonCenterPanel"], function(require, exports, baseCenter) {
     var SeadragonCenterPanel = (function (_super) {
         __extends(SeadragonCenterPanel, _super);
         function SeadragonCenterPanel($element) {
@@ -6716,14 +6638,14 @@ define('modules/wellcomeplayer-seadragoncenterpanel-module/seadragonCenterPanel'
         SeadragonCenterPanel.prototype.viewerOpen = function () {
             _super.prototype.viewerOpen.call(this);
 
-            if ((this.extension).searchResults) {
+            if (this.extension.searchResults) {
                 this.overlaySearchResults();
             }
         };
 
         SeadragonCenterPanel.prototype.overlaySearchResults = function () {
             var page = null;
-            var searchResults = (this.extension).searchResults;
+            var searchResults = this.extension.searchResults;
 
             for (var i = 0; i < searchResults.length; i++) {
                 if (searchResults[i].index == this.provider.canvasIndex) {
@@ -6783,14 +6705,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-mediaelementcenterpanel-module/mediaelementCenterPanel',["require", "exports", "../coreplayer-shared-module/baseExtension", "../../extensions/coreplayer-mediaelement-extension/extension", "../coreplayer-shared-module/centerPanel", "../../utils"], function(require, exports, __baseExtension__, __extension__, __baseCenter__, __utils__) {
-    var baseExtension = __baseExtension__;
-    
-    
-    var extension = __extension__;
-    var baseCenter = __baseCenter__;
-    var utils = __utils__;
-
+define('modules/coreplayer-mediaelementcenterpanel-module/mediaelementCenterPanel',["require", "exports", "../coreplayer-shared-module/baseExtension", "../../extensions/coreplayer-mediaelement-extension/extension", "../coreplayer-shared-module/centerPanel", "../../utils"], function(require, exports, baseExtension, extension, baseCenter, utils) {
     var MediaElementCenterPanel = (function (_super) {
         __extends(MediaElementCenterPanel, _super);
         function MediaElementCenterPanel($element) {
@@ -6838,7 +6753,7 @@ define('modules/coreplayer-mediaelementcenterpanel-module/mediaelementCenterPane
 
             var id = utils.Utils.getTimeStamp();
 
-            var poster = (this.provider).getPosterImageUri();
+            var poster = this.provider.getPosterImageUri();
 
             var type = this.provider.getSequenceType();
 
@@ -6964,13 +6879,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-mediaelement-extension/embedDialogue',["require", "exports", "../../modules/coreplayer-dialogues-module/embedDialogue"], function(require, exports, __embed__) {
-    
-    
-    
-    var embed = __embed__;
-    
-
+define('extensions/coreplayer-mediaelement-extension/embedDialogue',["require", "exports", "../../modules/coreplayer-dialogues-module/embedDialogue"], function(require, exports, embed) {
     var EmbedDialogue = (function (_super) {
         __extends(EmbedDialogue, _super);
         function EmbedDialogue() {
@@ -6983,7 +6892,7 @@ define('extensions/coreplayer-mediaelement-extension/embedDialogue',["require", 
         };
 
         EmbedDialogue.prototype.formatCode = function () {
-            this.code = (this.provider).getEmbedScript(this.currentWidth, this.currentHeight, this.options.embedTemplate);
+            this.code = this.provider.getEmbedScript(this.currentWidth, this.currentHeight, this.options.embedTemplate);
 
             this.$code.val(this.code);
         };
@@ -7015,23 +6924,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-mediaelement-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeView", "../../modules/coreplayer-mediaelementcenterpanel-module/mediaelementCenterPanel", "../../modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/coreplayer-shared-module/footerPanel", "../../modules/coreplayer-dialogues-module/helpDialogue", "./embedDialogue", "../../coreplayer-mediaelement-extension-dependencies"], function(require, exports, __baseExtension__, __utils__, __baseProvider__, __shell__, __header__, __left__, __treeView__, __center__, __right__, __footer__, __help__, __embed__, __dependencies__) {
-    var baseExtension = __baseExtension__;
-    var utils = __utils__;
-    var baseProvider = __baseProvider__;
-    
-    var shell = __shell__;
-    var header = __header__;
-    var left = __left__;
-    var treeView = __treeView__;
-    var center = __center__;
-    var right = __right__;
-    var footer = __footer__;
-    var help = __help__;
-    var embed = __embed__;
-    
-    var dependencies = __dependencies__;
-
+define('extensions/coreplayer-mediaelement-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeView", "../../modules/coreplayer-mediaelementcenterpanel-module/mediaelementCenterPanel", "../../modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/coreplayer-shared-module/footerPanel", "../../modules/coreplayer-dialogues-module/helpDialogue", "./embedDialogue", "../../coreplayer-mediaelement-extension-dependencies"], function(require, exports, baseExtension, utils, baseProvider, shell, header, left, treeView, center, right, footer, help, embed, dependencies) {
     var Extension = (function (_super) {
         __extends(Extension, _super);
         function Extension(provider) {
@@ -7100,7 +6993,7 @@ define('extensions/coreplayer-mediaelement-extension/extension',["require", "exp
             if (!this.provider.isHomeDomain)
                 return;
 
-            this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+            this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
         };
 
         Extension.prototype.isLeftPanelEnabled = function () {
@@ -7116,7 +7009,7 @@ define('extensions/coreplayer-mediaelement-extension/extension',["require", "exp
 
                 $.publish(Extension.OPEN_MEDIA, [canvas]);
 
-                _this.setParam(baseProvider.params.canvasIndex, 0);
+                _this.setParam(1 /* canvasIndex */, 0);
             });
         };
         Extension.OPEN_MEDIA = 'onMediaOpened';
@@ -7128,24 +7021,7 @@ define('extensions/coreplayer-mediaelement-extension/extension',["require", "exp
     exports.Extension = Extension;
 });
 
-define('modules/wellcomeplayer-shared-module/behaviours',["require", "exports", "../wellcomeplayer-dialogues-module/restrictedFileDialogue", "../wellcomeplayer-dialogues-module/loginDialogue", "../coreplayer-shared-module/baseExtension", "../coreplayer-shared-module/footerPanel", "../wellcomeplayer-extendedfooterpanel-module/footerPanel", "../coreplayer-dialogues-module/helpDialogue", "../wellcomeplayer-dialogues-module/conditionsDialogue", "../coreplayer-shared-module/leftPanel", "../coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../coreplayer-shared-module/rightPanel", "../../extensions/coreplayer-mediaelement-extension/extension", "../wellcomeplayer-dialogues-module/downloadDialogue"], function(require, exports, __restrictedFile__, __login__, __baseExtension__, __baseFooter__, __footer__, __help__, __conditions__, __baseLeft__, __left__, __baseRight__, __coreMediaElementExtension__, __download__) {
-    
-    
-    
-    
-    var restrictedFile = __restrictedFile__;
-    var login = __login__;
-    var baseExtension = __baseExtension__;
-    var baseFooter = __baseFooter__;
-    var footer = __footer__;
-    var help = __help__;
-    var conditions = __conditions__;
-    var baseLeft = __baseLeft__;
-    var left = __left__;
-    var baseRight = __baseRight__;
-    var coreMediaElementExtension = __coreMediaElementExtension__;
-    var download = __download__;
-
+define('modules/wellcomeplayer-shared-module/behaviours',["require", "exports", "../../utils", "../wellcomeplayer-dialogues-module/restrictedFileDialogue", "../wellcomeplayer-dialogues-module/loginDialogue", "../coreplayer-shared-module/baseExtension", "../coreplayer-shared-module/footerPanel", "../wellcomeplayer-extendedfooterpanel-module/footerPanel", "../coreplayer-dialogues-module/helpDialogue", "../wellcomeplayer-dialogues-module/conditionsDialogue", "../coreplayer-shared-module/leftPanel", "../coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../coreplayer-shared-module/rightPanel", "../../extensions/coreplayer-mediaelement-extension/extension", "../wellcomeplayer-dialogues-module/downloadDialogue"], function(require, exports, utils, restrictedFile, login, baseExtension, baseFooter, footer, help, conditions, baseLeft, left, baseRight, coreMediaElementExtension, download) {
     var Behaviours = (function () {
         function Behaviours(extension) {
             var _this = this;
@@ -7192,6 +7068,18 @@ define('modules/wellcomeplayer-shared-module/behaviours',["require", "exports", 
 
             $.subscribe(login.LoginDialogue.SHOW_LOGIN_DIALOGUE, function () {
                 _this.trackEvent('Player Interactions', 'Log in', 'Opened');
+            });
+
+            $.subscribe(login.LoginDialogue.VIEW_TERMS, function () {
+                _this.trackEvent('Player Interactions', 'Ts & Cs', 'Loaded');
+            });
+
+            $.subscribe(login.LoginDialogue.VIEW_FULL_TERMS, function () {
+                _this.trackEvent('Player Interactions', 'Ts & Cs', 'Viewed');
+            });
+
+            $.subscribe(login.LoginDialogue.ACCEPT_TERMS, function () {
+                _this.trackEvent('Player Interactions', 'Ts & Cs', 'Accepted');
             });
 
             $.subscribe(help.HelpDialogue.SHOW_HELP_DIALOGUE, function () {
@@ -7317,8 +7205,12 @@ define('modules/wellcomeplayer-shared-module/behaviours',["require", "exports", 
             return false;
         };
 
+        Behaviours.prototype.isEmbedEnabled = function () {
+            return (utils.Utils.getBool(this.extension.provider.config.options.embedEnabled, true) && this.extension.provider.manifest.extensions && this.extension.provider.manifest.extensions.isAllOpen);
+        };
+
         Behaviours.prototype.isSaveToLightboxEnabled = function () {
-            if (this.extension.provider.config.options.saveToLightboxEnabled === false)
+            if (!utils.Utils.getBool(this.extension.provider.config.options.saveToLightboxEnabled, true))
                 return false;
             if (!this.extension.provider.isHomeDomain)
                 return false;
@@ -7329,19 +7221,22 @@ define('modules/wellcomeplayer-shared-module/behaviours',["require", "exports", 
         };
 
         Behaviours.prototype.isDownloadEnabled = function () {
-            switch (this.extension.provider.type) {
-                case "book":
-                    if (this.extension.provider.config.options.bookDownloadEnabled === false) {
+            if (!utils.Utils.getBool(this.extension.provider.config.options.downloadEnabled, true))
+                return false;
+
+            switch (this.extension.provider.getManifestType()) {
+                case "monograph":
+                    if (!utils.Utils.getBool(this.extension.provider.config.options.bookDownloadEnabled, true)) {
                         return false;
                     }
                     break;
                 case "video":
-                    if (this.extension.provider.config.options.videoDownloadEnabled === false) {
+                    if (!utils.Utils.getBool(this.extension.provider.config.options.videoDownloadEnabled, true)) {
                         return false;
                     }
                     break;
                 case "audio":
-                    if (this.extension.provider.config.options.audioDownloadEnabled === false) {
+                    if (!utils.Utils.getBool(this.extension.provider.config.options.audioDownloadEnabled, true)) {
                         return false;
                     }
                     break;
@@ -7375,7 +7270,7 @@ define('modules/wellcomeplayer-shared-module/behaviours',["require", "exports", 
         };
 
         Behaviours.prototype.getGenericTrackingLabel = function () {
-            var moreInfo = (this.extension.provider).moreInfo;
+            var moreInfo = this.extension.provider.moreInfo;
 
             var format = 'n/a';
             var institution = 'n/a';
@@ -7676,32 +7571,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../coreplayer-seadragon-extension/extension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel", "../../modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/wellcomeplayer-searchfooterpanel-module/footerPanel", "../../modules/wellcomeplayer-dialogues-module/loginDialogue", "../../modules/wellcomeplayer-dialogues-module/restrictedFileDialogue", "../../modules/wellcomeplayer-dialogues-module/conditionsDialogue", "../../modules/wellcomeplayer-dialogues-module/downloadDialogue", "../../modules/wellcomeplayer-seadragoncenterpanel-module/seadragonCenterPanel", "../../extensions/coreplayer-seadragon-extension/embedDialogue", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../modules/wellcomeplayer-shared-module/behaviours"], function(require, exports, __baseExtension__, __coreExtension__, __utils__, __baseProvider__, __shell__, __header__, __left__, __right__, __footer__, __login__, __restrictedFile__, __conditions__, __download__, __center__, __embed__, __help__, __sharedBehaviours__) {
-    var baseExtension = __baseExtension__;
-    var coreExtension = __coreExtension__;
-    var utils = __utils__;
-    var baseProvider = __baseProvider__;
-    
-    var shell = __shell__;
-    var header = __header__;
-    var left = __left__;
-    var right = __right__;
-    var footer = __footer__;
-    var login = __login__;
-    var restrictedFile = __restrictedFile__;
-    var conditions = __conditions__;
-    var download = __download__;
-    var center = __center__;
-    var embed = __embed__;
-    var help = __help__;
-    
-    var sharedBehaviours = __sharedBehaviours__;
-    
-    
-    
-    
-    
-
+define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../coreplayer-seadragon-extension/extension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-pagingheaderpanel-module/pagingHeaderPanel", "../../modules/wellcomeplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/wellcomeplayer-searchfooterpanel-module/footerPanel", "../../modules/wellcomeplayer-dialogues-module/loginDialogue", "../../modules/wellcomeplayer-dialogues-module/restrictedFileDialogue", "../../modules/wellcomeplayer-dialogues-module/conditionsDialogue", "../../modules/wellcomeplayer-dialogues-module/downloadDialogue", "../../modules/wellcomeplayer-seadragoncenterpanel-module/seadragonCenterPanel", "../../extensions/coreplayer-seadragon-extension/embedDialogue", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../modules/wellcomeplayer-shared-module/behaviours"], function(require, exports, baseExtension, coreExtension, utils, baseProvider, shell, header, left, right, footer, login, restrictedFile, conditions, download, center, embed, help, sharedBehaviours) {
     var Extension = (function (_super) {
         __extends(Extension, _super);
         function Extension(provider) {
@@ -7715,6 +7585,13 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
 
             $(window).bind('unload', function () {
                 $.publish(baseExtension.BaseExtension.WINDOW_UNLOAD);
+            });
+
+            $.subscribe(center.SeadragonCenterPanel.SEADRAGON_ANIMATION_FINISH, function (e, viewer) {
+                _this.triggerSocket(Extension.CURRENT_VIEW_URI, {
+                    "cropUri": _this.getCropUri(false),
+                    "fullUri": _this.provider.getImage(_this.provider.getCurrentCanvas(), false, false)
+                });
             });
 
             $.subscribe(footer.FooterPanel.VIEW_PAGE, function (e, index) {
@@ -7801,7 +7678,7 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
         };
 
         Extension.prototype.search = function (terms) {
-            var searchUri = (this.provider).getSearchUri(terms);
+            var searchUri = this.provider.getSearchUri(terms);
 
             var that = this;
 
@@ -7854,11 +7731,11 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
                 _this.prefetchAsset(canvasIndex, function () {
                     var asset = _this.provider.sequence.assets[canvasIndex];
 
-                    var dziUri = (_this.provider).getImageUri(asset);
+                    var dziUri = _this.provider.getImageUri(asset);
 
                     $.publish(Extension.OPEN_MEDIA, [dziUri]);
 
-                    _this.setParam(baseProvider.params.canvasIndex, canvasIndex);
+                    _this.setParam(1 /* canvasIndex */, canvasIndex);
 
                     _this.updateSlidingExpiration();
                 });
@@ -7894,13 +7771,13 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
                     allowSocialLogin: true
                 });
             } else {
-                var path = (this.provider).getSaveUri();
+                var path = this.provider.getSaveUri();
                 var thumbnail = this.getCropUri(true);
                 var title = this.provider.getTitle();
                 var asset = this.provider.getCurrentCanvas();
                 var label = asset.orderLabel;
 
-                var info = (this.provider).getSaveInfo(path, thumbnail, title, this.provider.canvasIndex, label);
+                var info = this.provider.getSaveInfo(path, thumbnail, title, this.provider.canvasIndex, label);
                 this.triggerSocket(Extension.SAVE, info);
             }
         };
@@ -7912,7 +7789,7 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
         Extension.prototype.getCropUri = function (relative) {
             var page = this.provider.getCurrentCanvas();
             var viewer = this.getViewer();
-            return (this.provider).getCrop(page, viewer, false, relative);
+            return this.provider.getCrop(page, viewer, false, relative);
         };
 
         Extension.prototype.setParams = function () {
@@ -7929,11 +7806,11 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
                 parent.document.location.hash = '';
 
                 if (params[0]) {
-                    this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+                    this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
                 }
 
                 if (params[1]) {
-                    this.setParam(baseProvider.params.canvasIndex, params[1]);
+                    this.setParam(1 /* canvasIndex */, params[1]);
                 }
 
                 if (params[2]) {
@@ -7942,7 +7819,7 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
 
                         utils.Utils.setHashParameter(a[0], a[1], parent.document);
                     } else {
-                        this.setParam(baseProvider.params.zoom, params[2]);
+                        this.setParam(2 /* zoom */, params[2]);
                     }
                 }
 
@@ -7954,7 +7831,7 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
                     utils.Utils.setHashParameter(a[0], a[1], parent.document);
                 }
             } else {
-                this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+                this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
             }
         };
 
@@ -8026,6 +7903,10 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
             this.behaviours.trackVariable(slot, name, value, scope);
         };
 
+        Extension.prototype.isEmbedEnabled = function () {
+            return this.behaviours.isEmbedEnabled();
+        };
+
         Extension.prototype.isSaveToLightboxEnabled = function () {
             return this.behaviours.isSaveToLightboxEnabled();
         };
@@ -8036,17 +7917,13 @@ define('extensions/wellcomeplayer-seadragon-extension/extension',["require", "ex
         Extension.SEARCH_RESULTS = 'onSearchResults';
         Extension.SEARCH_RESULTS_EMPTY = 'onSearchResults';
         Extension.SAVE = 'onSave';
+        Extension.CURRENT_VIEW_URI = 'onCurrentViewUri';
         return Extension;
     })(coreExtension.Extension);
     exports.Extension = Extension;
 });
 
-define('modules/coreplayer-shared-module/baseIIIFProvider',["require", "exports", "../../utils", "./treeNode", "./thumb"], function(require, exports, __utils__, __TreeNode__, __Thumb__) {
-    var utils = __utils__;
-    
-    var TreeNode = __TreeNode__;
-    var Thumb = __Thumb__;
-
+define('modules/coreplayer-shared-module/baseIIIFProvider',["require", "exports", "../../utils", "./treeNode", "./thumb"], function(require, exports, utils, TreeNode, Thumb) {
     (function (params) {
         params[params["sequenceIndex"] = 0] = "sequenceIndex";
         params[params["canvasIndex"] = 1] = "canvasIndex";
@@ -8078,11 +7955,11 @@ define('modules/coreplayer-shared-module/baseIIIFProvider',["require", "exports"
             this.isLightbox = utils.Utils.getQuerystringParameter('lb') === "true";
 
             if (this.isHomeDomain && !this.isReload) {
-                this.sequenceIndex = parseInt(utils.Utils.getHashParameter(this.paramMap[params.sequenceIndex], parent.document));
+                this.sequenceIndex = parseInt(utils.Utils.getHashParameter(this.paramMap[0 /* sequenceIndex */], parent.document));
             }
 
             if (!this.sequenceIndex) {
-                this.sequenceIndex = parseInt(utils.Utils.getQuerystringParameter(this.paramMap[params.sequenceIndex])) || 0;
+                this.sequenceIndex = parseInt(utils.Utils.getQuerystringParameter(this.paramMap[0 /* sequenceIndex */])) || 0;
             }
 
             this.load();
@@ -8161,6 +8038,8 @@ define('modules/coreplayer-shared-module/baseIIIFProvider',["require", "exports"
         };
 
         BaseProvider.prototype.getStructureByCanvasIndex = function (index) {
+            if (index == -1)
+                return null;
             var canvas = this.getCanvasByIndex(index);
             return this.getCanvasStructure(canvas);
         };
@@ -8369,6 +8248,35 @@ define('modules/coreplayer-shared-module/baseIIIFProvider',["require", "exports"
         BaseProvider.prototype.getMetaData = function (callback) {
             callback(this.manifest.metadata);
         };
+
+        BaseProvider.prototype.defaultToThumbsView = function () {
+            var manifestType = this.getManifestType();
+
+            switch (manifestType) {
+                case 'monograph':
+                    if (!this.isMultiSequence())
+                        return true;
+                    break;
+                case 'archive':
+                    return true;
+                    break;
+                case 'boundmanuscript':
+                    return true;
+                    break;
+                case 'artwork':
+                    return true;
+            }
+
+            var sequenceType = this.getSequenceType();
+
+            switch (sequenceType) {
+                case 'application-pdf':
+                    return true;
+                    break;
+            }
+
+            return false;
+        };
         return BaseProvider;
     })();
     exports.BaseProvider = BaseProvider;
@@ -8380,11 +8288,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-seadragon-extension/iiifProvider',["require", "exports", "../../modules/coreplayer-shared-module/baseIIIFProvider"], function(require, exports, __baseProvider__) {
-    var baseProvider = __baseProvider__;
-    
-    
-
+define('extensions/coreplayer-seadragon-extension/iiifProvider',["require", "exports", "../../modules/coreplayer-shared-module/baseIIIFProvider"], function(require, exports, baseProvider) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -8402,11 +8306,13 @@ define('extensions/coreplayer-seadragon-extension/iiifProvider',["require", "exp
 
             if (canvas.resources) {
                 iiifUri = canvas.resources[0].resource.service['@id'];
-            } else if (canvas.images) {
+            } else if (canvas.images && canvas.images[0].resource.service) {
                 iiifUri = canvas.images[0].resource.service['@id'];
             }
 
-            if (iiifUri.endsWith('/')) {
+            if (!iiifUri) {
+                console.warn('no service endpoint available');
+            } else if (iiifUri.endsWith('/')) {
                 iiifUri += 'info.json';
             } else {
                 iiifUri += '/info.json';
@@ -8417,14 +8323,14 @@ define('extensions/coreplayer-seadragon-extension/iiifProvider',["require", "exp
             return uri;
         };
 
-        Provider.prototype.getEmbedScript = function (canvasIndex, zoom, width, height, embedTemplate) {
+        Provider.prototype.getEmbedScript = function (canvasIndex, zoom, width, height, rotation, embedTemplate) {
             var esu = this.options.embedScriptUri || this.embedScriptUri;
 
             var template = this.options.embedTemplate || embedTemplate;
 
             var configUri = this.config.uri || '';
 
-            var script = String.prototype.format(template, this.dataUri, this.sequenceIndex, canvasIndex, zoom, configUri, width, height, esu);
+            var script = String.prototype.format(template, this.dataUri, this.sequenceIndex, canvasIndex, zoom, rotation, configUri, width, height, esu);
 
             return script;
         };
@@ -8439,13 +8345,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/wellcomeplayer-seadragon-extension/iiifProvider',["require", "exports", "../coreplayer-seadragon-extension/iiifProvider", "../../utils", "../../modules/coreplayer-shared-module/treeNode"], function(require, exports, __coreProvider__, __utils__, __TreeNode__) {
-    var coreProvider = __coreProvider__;
-    var utils = __utils__;
-    
-    var TreeNode = __TreeNode__;
-    
-
+define('extensions/wellcomeplayer-seadragon-extension/iiifProvider',["require", "exports", "../coreplayer-seadragon-extension/iiifProvider", "../../utils", "../../modules/coreplayer-shared-module/treeNode"], function(require, exports, coreProvider, utils, TreeNode) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -8461,13 +8361,14 @@ define('extensions/wellcomeplayer-seadragon-extension/iiifProvider',["require", 
                 cropImageUriTemplate: '{0}/crop/{1}/{2}/{3}/jp2?left={4}&top={5}&width={6}&height={7}&scaleWidth={8}&scaleHeight={9}&origWidth={10}&origHeight={11}&RGN={12}',
                 actualImageUriTemplate: '{0}/actual/{1}/{2}/{3}/jp2',
                 confineImageUriTemplate: '{0}/confine/{1}/{2}/{3}/jp2?boundingWidth={4}&boundingHeight={5}&origWidth={6}&origHeight={7}',
+                imageUriTemplate: '{0}{1}',
                 pdfUriTemplate: '{0}/pdf/{1}/{2}/{3}_{2}.pdf',
                 isSecureLogin: false,
                 embedScriptUri: 'http://wellcomelibrary.org/spas/player/build/wellcomeplayer/js/embed.js'
             });
         }
         Provider.prototype.getMoreInfoUri = function () {
-            var baseUri = this.options.dataBaseUri || "";
+            var baseUri = this.config.options.moreInfoBaseUri || this.options.dataBaseUri || "";
             var uri = baseUri + this.manifest.bibliographicInformation;
 
             if (this.options.timestampUris)
@@ -8586,7 +8487,8 @@ define('extensions/wellcomeplayer-seadragon-extension/iiifProvider',["require", 
                     uri += "&download=true";
             }
 
-            return uri;
+            var baseUri = this.config.options.imageBaseUri || this.config.options.dataBaseUri || "";
+            return String.prototype.format(this.config.options.imageUriTemplate, baseUri, uri);
         };
 
         Provider.prototype.getPDF = function (download) {
@@ -8648,11 +8550,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-seadragon-extension/provider',["require", "exports", "../../modules/coreplayer-shared-module/baseProvider"], function(require, exports, __baseProvider__) {
-    var baseProvider = __baseProvider__;
-    
-    
-
+define('extensions/coreplayer-seadragon-extension/provider',["require", "exports", "../../modules/coreplayer-shared-module/baseProvider"], function(require, exports, baseProvider) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -8670,14 +8568,14 @@ define('extensions/coreplayer-seadragon-extension/provider',["require", "exports
             return uri;
         };
 
-        Provider.prototype.getEmbedScript = function (canvasIndex, zoom, width, height, embedTemplate) {
+        Provider.prototype.getEmbedScript = function (assetIndex, zoom, width, height, rotation, embedTemplate) {
             var esu = this.options.embedScriptUri || this.embedScriptUri;
 
             var template = this.options.embedTemplate || embedTemplate;
 
             var configUri = this.config.uri || '';
 
-            var script = String.prototype.format(template, this.dataUri, this.sequenceIndex, canvasIndex, zoom, configUri, width, height, esu);
+            var script = String.prototype.format(template, this.dataUri, this.sequenceIndex, assetIndex, zoom, rotation, configUri, width, height, esu);
 
             return script;
         };
@@ -8692,13 +8590,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/wellcomeplayer-seadragon-extension/provider',["require", "exports", "../coreplayer-seadragon-extension/provider", "../../utils", "../../modules/coreplayer-shared-module/treeNode", "./journalSortType"], function(require, exports, __coreProvider__, __utils__, __TreeNode__, __journalSortType__) {
-    var coreProvider = __coreProvider__;
-    var utils = __utils__;
-    
-    var TreeNode = __TreeNode__;
-    var journalSortType = __journalSortType__;
-
+define('extensions/wellcomeplayer-seadragon-extension/provider',["require", "exports", "../coreplayer-seadragon-extension/provider", "../../utils", "../../modules/coreplayer-shared-module/treeNode", "./journalSortType"], function(require, exports, coreProvider, utils, TreeNode, journalSortType) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -8714,13 +8606,14 @@ define('extensions/wellcomeplayer-seadragon-extension/provider',["require", "exp
                 cropImageUriTemplate: '{0}/crop/{1}/{2}/{3}/jp2?left={4}&top={5}&width={6}&height={7}&scaleWidth={8}&scaleHeight={9}&origWidth={10}&origHeight={11}&RGN={12}',
                 actualImageUriTemplate: '{0}/actual/{1}/{2}/{3}/jp2',
                 confineImageUriTemplate: '{0}/confine/{1}/{2}/{3}/jp2?boundingWidth={4}&boundingHeight={5}&origWidth={6}&origHeight={7}',
+                imageUriTemplate: '{0}{1}',
                 pdfUriTemplate: '{0}/pdf/{1}/{2}/{3}_{2}.pdf',
                 isSecureLogin: false,
                 embedScriptUri: 'http://wellcomelibrary.org/spas/player/build/wellcomeplayer/js/embed.js'
             });
         }
         Provider.prototype.getMoreInfoUri = function () {
-            var baseUri = this.options.dataBaseUri || "";
+            var baseUri = this.config.options.moreInfoBaseUri || this.options.dataBaseUri || "";
             var uri = baseUri + this.manifest.bibliographicInformation;
 
             if (this.options.timestampUris)
@@ -8839,7 +8732,8 @@ define('extensions/wellcomeplayer-seadragon-extension/provider',["require", "exp
                     uri += "&download=true";
             }
 
-            return uri;
+            var baseUri = this.config.options.imageBaseUri || this.config.options.dataBaseUri || "";
+            return String.prototype.format(this.config.options.imageUriTemplate, baseUri, uri);
         };
 
         Provider.prototype.getPDF = function (download) {
@@ -8895,9 +8789,9 @@ define('extensions/wellcomeplayer-seadragon-extension/provider',["require", "exp
             if (!rootStructure || rootStructure.structures.length == 0)
                 return null;
 
-            if (sortType == journalSortType.JournalSortType.date) {
+            if (sortType == 0 /* date */) {
                 this.getJournalTreeNodesByDate(treeRoot, rootStructure.structures);
-            } else if (sortType == journalSortType.JournalSortType.volume) {
+            } else if (sortType == 1 /* volume */) {
                 this.getJournalTreeNodesByVolume(treeRoot, rootStructure.structures);
             }
 
@@ -9118,30 +9012,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/wellcomeplayer-mediaelement-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../coreplayer-mediaelement-extension/extension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/wellcomeplayer-extendedfooterpanel-module/footerPanel", "../../modules/wellcomeplayer-dialogues-module/loginDialogue", "../../modules/wellcomeplayer-dialogues-module/conditionsDialogue", "../../modules/wellcomeplayer-dialogues-module/downloadDialogue", "../../modules/coreplayer-mediaelementcenterpanel-module/mediaelementCenterPanel", "../../extensions/coreplayer-mediaelement-extension/embedDialogue", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../modules/wellcomeplayer-shared-module/behaviours"], function(require, exports, __baseExtension__, __coreExtension__, __utils__, __baseProvider__, __shell__, __header__, __left__, __right__, __footer__, __login__, __conditions__, __download__, __center__, __embed__, __help__, __sharedBehaviours__) {
-    var baseExtension = __baseExtension__;
-    var coreExtension = __coreExtension__;
-    var utils = __utils__;
-    var baseProvider = __baseProvider__;
-    
-    var shell = __shell__;
-    var header = __header__;
-    var left = __left__;
-    var right = __right__;
-    var footer = __footer__;
-    var login = __login__;
-    var conditions = __conditions__;
-    var download = __download__;
-    var center = __center__;
-    var embed = __embed__;
-    var help = __help__;
-    
-    var sharedBehaviours = __sharedBehaviours__;
-    
-    
-    
-    
-
+define('extensions/wellcomeplayer-mediaelement-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../coreplayer-mediaelement-extension/extension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/wellcomeplayer-extendedfooterpanel-module/footerPanel", "../../modules/wellcomeplayer-dialogues-module/loginDialogue", "../../modules/wellcomeplayer-dialogues-module/conditionsDialogue", "../../modules/wellcomeplayer-dialogues-module/downloadDialogue", "../../modules/coreplayer-mediaelementcenterpanel-module/mediaelementCenterPanel", "../../extensions/coreplayer-mediaelement-extension/embedDialogue", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../modules/wellcomeplayer-shared-module/behaviours"], function(require, exports, baseExtension, coreExtension, utils, baseProvider, shell, header, left, right, footer, login, conditions, download, center, embed, help, sharedBehaviours) {
     var Extension = (function (_super) {
         __extends(Extension, _super);
         function Extension(provider) {
@@ -9216,13 +9087,13 @@ define('extensions/wellcomeplayer-mediaelement-extension/extension',["require", 
                     _this.prefetchAsset(canvasIndex, function () {
                         _this.provider.setMediaUri(canvas);
                         $.publish(Extension.OPEN_MEDIA, [canvas]);
-                        _this.setParam(baseProvider.params.canvasIndex, canvasIndex);
+                        _this.setParam(1 /* canvasIndex */, canvasIndex);
                         _this.updateSlidingExpiration();
                     });
                 } else {
                     _this.provider.setMediaUri(canvas);
                     $.publish(Extension.OPEN_MEDIA, [canvas]);
-                    _this.setParam(baseProvider.params.canvasIndex, canvasIndex);
+                    _this.setParam(1 /* canvasIndex */, canvasIndex);
                     _this.updateSlidingExpiration();
                 }
             });
@@ -9257,11 +9128,11 @@ define('extensions/wellcomeplayer-mediaelement-extension/extension',["require", 
                     allowSocialLogin: true
                 });
             } else {
-                var path = (this.provider).getSaveUri();
-                var thumbnail = (this.provider).getThumbUri();
+                var path = this.provider.getSaveUri();
+                var thumbnail = this.provider.getThumbUri();
                 var title = this.provider.getTitle();
 
-                var info = (this.provider).getSaveInfo(path, thumbnail, title);
+                var info = this.provider.getSaveInfo(path, thumbnail, title);
                 this.triggerSocket(Extension.SAVE, info);
             }
         };
@@ -9278,14 +9149,14 @@ define('extensions/wellcomeplayer-mediaelement-extension/extension',["require", 
                 parent.document.location.hash = '';
 
                 if (params[0]) {
-                    this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+                    this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
                 }
 
                 if (params[1]) {
-                    this.setParam(baseProvider.params.canvasIndex, params[1]);
+                    this.setParam(1 /* canvasIndex */, params[1]);
                 }
             } else {
-                this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+                this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
             }
         };
 
@@ -9357,6 +9228,10 @@ define('extensions/wellcomeplayer-mediaelement-extension/extension',["require", 
             this.behaviours.trackVariable(slot, name, value, scope);
         };
 
+        Extension.prototype.isEmbedEnabled = function () {
+            return this.behaviours.isEmbedEnabled();
+        };
+
         Extension.prototype.isSaveToLightboxEnabled = function () {
             return this.behaviours.isSaveToLightboxEnabled();
         };
@@ -9376,11 +9251,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-mediaelement-extension/provider',["require", "exports", "../../modules/coreplayer-shared-module/baseProvider"], function(require, exports, __baseProvider__) {
-    var baseProvider = __baseProvider__;
-    
-    
-
+define('extensions/coreplayer-mediaelement-extension/provider',["require", "exports", "../../modules/coreplayer-shared-module/baseProvider"], function(require, exports, baseProvider) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -9418,11 +9289,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/wellcomeplayer-mediaelement-extension/provider',["require", "exports", "../coreplayer-mediaelement-extension/provider", "../../utils"], function(require, exports, __coreProvider__, __utils__) {
-    var coreProvider = __coreProvider__;
-    var utils = __utils__;
-    
-
+define('extensions/wellcomeplayer-mediaelement-extension/provider',["require", "exports", "../coreplayer-mediaelement-extension/provider", "../../utils"], function(require, exports, coreProvider, utils) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -9439,7 +9306,7 @@ define('extensions/wellcomeplayer-mediaelement-extension/provider',["require", "
             });
         }
         Provider.prototype.getMoreInfoUri = function () {
-            var baseUri = this.options.dataBaseUri || "";
+            var baseUri = this.config.options.moreInfoBaseUri || this.options.dataBaseUri || "";
             var uri = baseUri + this.manifest.bibliographicInformation;
 
             if (this.options.timestampUris)
@@ -9502,14 +9369,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel',["require", "exports", "../../extensions/coreplayer-pdf-extension/extension", "../coreplayer-shared-module/centerPanel"], function(require, exports, __extension__, __baseCenter__) {
-    
-    
-    
-    var extension = __extension__;
-    var baseCenter = __baseCenter__;
-    
-
+define('modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel',["require", "exports", "../../extensions/coreplayer-pdf-extension/extension", "../coreplayer-shared-module/centerPanel"], function(require, exports, extension, baseCenter) {
     var PDFCenterPanel = (function (_super) {
         __extends(PDFCenterPanel, _super);
         function PDFCenterPanel($element) {
@@ -9531,7 +9391,12 @@ define('modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel',["require", "ex
             var browser = window.BrowserDetect.browser;
             var version = window.BrowserDetect.version;
 
-            if (browser == 'Chrome' || browser == 'Firefox' && version > 20 || browser == 'Opera') {
+            if (browser == 'Explorer' && version < 10) {
+                var myPDF = new PDFObject({
+                    url: canvas.mediaUri,
+                    id: "PDF"
+                }).embed('content');
+            } else {
                 var viewerPath;
 
                 if (window.DEBUG) {
@@ -9553,11 +9418,6 @@ define('modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel',["require", "ex
 
                     _this.resize();
                 });
-            } else {
-                var myPDF = new PDFObject({
-                    url: canvas.mediaUri,
-                    id: "PDF"
-                }).embed('content');
             }
         };
 
@@ -9575,13 +9435,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-pdf-extension/embedDialogue',["require", "exports", "../../modules/coreplayer-dialogues-module/embedDialogue"], function(require, exports, __embed__) {
-    
-    
-    
-    var embed = __embed__;
-    
-
+define('extensions/coreplayer-pdf-extension/embedDialogue',["require", "exports", "../../modules/coreplayer-dialogues-module/embedDialogue"], function(require, exports, embed) {
     var EmbedDialogue = (function (_super) {
         __extends(EmbedDialogue, _super);
         function EmbedDialogue() {
@@ -9594,7 +9448,7 @@ define('extensions/coreplayer-pdf-extension/embedDialogue',["require", "exports"
         };
 
         EmbedDialogue.prototype.formatCode = function () {
-            this.code = (this.provider).getEmbedScript(this.currentWidth, this.currentHeight, this.options.embedTemplate);
+            this.code = this.provider.getEmbedScript(this.currentWidth, this.currentHeight, this.options.embedTemplate);
 
             this.$code.val(this.code);
         };
@@ -9629,40 +9483,36 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-pdf-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel", "../../modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/coreplayer-shared-module/footerPanel", "../../modules/coreplayer-dialogues-module/helpDialogue", "./embedDialogue", "../../modules/coreplayer-treeviewleftpanel-module/thumbsView", "../../coreplayer-pdf-extension-dependencies"], function(require, exports, __baseExtension__, __utils__, __baseProvider__, __shell__, __header__, __left__, __center__, __right__, __footer__, __help__, __embed__, __thumbsView__, __dependencies__) {
-    var baseExtension = __baseExtension__;
-    var utils = __utils__;
-    var baseProvider = __baseProvider__;
-    
-    
-    
-    var shell = __shell__;
-    var header = __header__;
-    var left = __left__;
-    var center = __center__;
-    var right = __right__;
-    var footer = __footer__;
-    var help = __help__;
-    var embed = __embed__;
-    var thumbsView = __thumbsView__;
-    var dependencies = __dependencies__;
-
+define('extensions/coreplayer-pdf-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel", "../../modules/coreplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/coreplayer-shared-module/footerPanel", "../../modules/coreplayer-dialogues-module/helpDialogue", "./embedDialogue", "../../modules/coreplayer-treeviewleftpanel-module/thumbsView", "../../coreplayer-pdf-extension-dependencies"], function(require, exports, baseExtension, utils, baseProvider, shell, header, left, center, right, footer, help, embed, thumbsView, dependencies) {
     var Extension = (function (_super) {
         __extends(Extension, _super);
         function Extension(provider) {
             _super.call(this, provider);
         }
         Extension.prototype.create = function () {
+            var _this = this;
             _super.prototype.create.call(this);
 
             var that = this;
 
             $.subscribe(thumbsView.ThumbsView.THUMB_SELECTED, function (e, index) {
-                window.open((that.provider).getPDFUri());
+                window.open(that.provider.getPDFUri());
             });
 
             $.subscribe(footer.FooterPanel.EMBED, function (e) {
                 $.publish(embed.EmbedDialogue.SHOW_EMBED_DIALOGUE);
+            });
+
+            $.subscribe(shell.Shell.SHOW_OVERLAY, function (e, params) {
+                if (_this.IsOldIE()) {
+                    _this.centerPanel.$element.hide();
+                }
+            });
+
+            $.subscribe(shell.Shell.HIDE_OVERLAY, function (e, params) {
+                if (_this.IsOldIE()) {
+                    _this.centerPanel.$element.show();
+                }
             });
 
             require(_.values(dependencies), function () {
@@ -9674,6 +9524,15 @@ define('extensions/coreplayer-pdf-extension/extension',["require", "exports", ".
 
                 $.publish(Extension.CREATED);
             });
+        };
+
+        Extension.prototype.IsOldIE = function () {
+            var browser = window.BrowserDetect.browser;
+            var version = window.BrowserDetect.version;
+
+            if (browser == 'Explorer' && version <= 9)
+                return true;
+            return false;
         };
 
         Extension.prototype.createModules = function () {
@@ -9721,7 +9580,7 @@ define('extensions/coreplayer-pdf-extension/extension',["require", "exports", ".
 
                 $.publish(Extension.OPEN_MEDIA, [canvas]);
 
-                _this.setParam(baseProvider.params.canvasIndex, 0);
+                _this.setParam(1 /* canvasIndex */, 0);
             });
         };
         return Extension;
@@ -9735,30 +9594,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/wellcomeplayer-pdf-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../coreplayer-pdf-extension/extension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/wellcomeplayer-extendedfooterpanel-module/footerPanel", "../../modules/wellcomeplayer-dialogues-module/loginDialogue", "../../modules/wellcomeplayer-dialogues-module/conditionsDialogue", "../../modules/wellcomeplayer-dialogues-module/downloadDialogue", "../../modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel", "../../extensions/coreplayer-pdf-extension/embedDialogue", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../modules/wellcomeplayer-shared-module/behaviours"], function(require, exports, __baseExtension__, __coreExtension__, __utils__, __baseProvider__, __shell__, __header__, __left__, __right__, __footer__, __login__, __conditions__, __download__, __center__, __embed__, __help__, __sharedBehaviours__) {
-    var baseExtension = __baseExtension__;
-    var coreExtension = __coreExtension__;
-    var utils = __utils__;
-    var baseProvider = __baseProvider__;
-    
-    var shell = __shell__;
-    var header = __header__;
-    var left = __left__;
-    var right = __right__;
-    var footer = __footer__;
-    var login = __login__;
-    var conditions = __conditions__;
-    var download = __download__;
-    var center = __center__;
-    var embed = __embed__;
-    var help = __help__;
-    
-    var sharedBehaviours = __sharedBehaviours__;
-    
-    
-    
-    
-
+define('extensions/wellcomeplayer-pdf-extension/extension',["require", "exports", "../../modules/coreplayer-shared-module/baseExtension", "../coreplayer-pdf-extension/extension", "../../utils", "../../modules/coreplayer-shared-module/baseProvider", "../../modules/coreplayer-shared-module/shell", "../../modules/coreplayer-shared-module/headerPanel", "../../modules/coreplayer-treeviewleftpanel-module/treeViewLeftPanel", "../../modules/wellcomeplayer-moreinforightpanel-module/moreInfoRightPanel", "../../modules/wellcomeplayer-extendedfooterpanel-module/footerPanel", "../../modules/wellcomeplayer-dialogues-module/loginDialogue", "../../modules/wellcomeplayer-dialogues-module/conditionsDialogue", "../../modules/wellcomeplayer-dialogues-module/downloadDialogue", "../../modules/coreplayer-pdfcenterpanel-module/pdfCenterPanel", "../../extensions/coreplayer-pdf-extension/embedDialogue", "../../modules/coreplayer-dialogues-module/helpDialogue", "../../modules/wellcomeplayer-shared-module/behaviours"], function(require, exports, baseExtension, coreExtension, utils, baseProvider, shell, header, left, right, footer, login, conditions, download, center, embed, help, sharedBehaviours) {
     var Extension = (function (_super) {
         __extends(Extension, _super);
         function Extension(provider) {
@@ -9833,13 +9669,13 @@ define('extensions/wellcomeplayer-pdf-extension/extension',["require", "exports"
                     _this.prefetchAsset(canvasIndex, function () {
                         _this.provider.setMediaUri(canvas);
                         $.publish(Extension.OPEN_MEDIA, [canvas]);
-                        _this.setParam(baseProvider.params.canvasIndex, canvasIndex);
+                        _this.setParam(1 /* canvasIndex */, canvasIndex);
                         _this.updateSlidingExpiration();
                     });
                 } else {
                     _this.provider.setMediaUri(canvas);
                     $.publish(Extension.OPEN_MEDIA, [canvas]);
-                    _this.setParam(baseProvider.params.canvasIndex, canvasIndex);
+                    _this.setParam(1 /* canvasIndex */, canvasIndex);
                     _this.updateSlidingExpiration();
                 }
             });
@@ -9874,11 +9710,11 @@ define('extensions/wellcomeplayer-pdf-extension/extension',["require", "exports"
                     allowSocialLogin: true
                 });
             } else {
-                var path = (this.provider).getSaveUri();
-                var thumbnail = (this.provider).getThumbUri(this.provider.getCanvasByIndex(0));
+                var path = this.provider.getSaveUri();
+                var thumbnail = this.provider.getThumbUri(this.provider.getCanvasByIndex(0));
                 var title = this.provider.getTitle();
 
-                var info = (this.provider).getSaveInfo(path, thumbnail, title);
+                var info = this.provider.getSaveInfo(path, thumbnail, title);
                 this.triggerSocket(Extension.SAVE, info);
             }
         };
@@ -9895,14 +9731,14 @@ define('extensions/wellcomeplayer-pdf-extension/extension',["require", "exports"
                 parent.document.location.hash = '';
 
                 if (params[0]) {
-                    this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+                    this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
                 }
 
                 if (params[1]) {
-                    this.setParam(baseProvider.params.canvasIndex, params[1]);
+                    this.setParam(1 /* canvasIndex */, params[1]);
                 }
             } else {
-                this.setParam(baseProvider.params.sequenceIndex, this.provider.sequenceIndex);
+                this.setParam(0 /* sequenceIndex */, this.provider.sequenceIndex);
             }
         };
 
@@ -9974,6 +9810,10 @@ define('extensions/wellcomeplayer-pdf-extension/extension',["require", "exports"
             this.behaviours.trackVariable(slot, name, value, scope);
         };
 
+        Extension.prototype.isEmbedEnabled = function () {
+            return this.behaviours.isEmbedEnabled();
+        };
+
         Extension.prototype.isSaveToLightboxEnabled = function () {
             return this.behaviours.isSaveToLightboxEnabled();
         };
@@ -9993,11 +9833,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/coreplayer-pdf-extension/provider',["require", "exports", "../../modules/coreplayer-shared-module/baseProvider"], function(require, exports, __baseProvider__) {
-    var baseProvider = __baseProvider__;
-    
-    
-
+define('extensions/coreplayer-pdf-extension/provider',["require", "exports", "../../modules/coreplayer-shared-module/baseProvider"], function(require, exports, baseProvider) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -10032,11 +9868,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-define('extensions/wellcomeplayer-pdf-extension/provider',["require", "exports", "../coreplayer-pdf-extension/provider", "../../utils"], function(require, exports, __coreProvider__, __utils__) {
-    var coreProvider = __coreProvider__;
-    var utils = __utils__;
-    
-
+define('extensions/wellcomeplayer-pdf-extension/provider',["require", "exports", "../coreplayer-pdf-extension/provider", "../../utils"], function(require, exports, coreProvider, utils) {
     var Provider = (function (_super) {
         __extends(Provider, _super);
         function Provider(config, manifest) {
@@ -10053,7 +9885,7 @@ define('extensions/wellcomeplayer-pdf-extension/provider',["require", "exports",
             });
         }
         Provider.prototype.getMoreInfoUri = function () {
-            var baseUri = this.options.dataBaseUri || "";
+            var baseUri = this.config.options.moreInfoBaseUri || this.options.dataBaseUri || "";
             var uri = baseUri + this.manifest.bibliographicInformation;
 
             if (this.options.timestampUris)
@@ -10163,43 +9995,37 @@ require([
     extensions['seadragon/dzi'] = {
         type: seadragonExtension.Extension,
         provider: seadragonProvider.Provider,
-        config:"js/wellcomeplayer-seadragon-extension-config.js",
-        css:"css/wellcomeplayer-seadragon-extension.css"
+        name: 'wellcomeplayer-seadragon-extension'
     };
 
     extensions['seadragon/iiif'] = {
         type: seadragonExtension.Extension,
         provider: seadragonIIIFProvider.Provider,
-        config:"js/wellcomeplayer-seadragon-extension-config.js",
-        css:"css/wellcomeplayer-seadragon-extension.css"
+        name: 'wellcomeplayer-seadragon-extension'
     };
 
     extensions['video/mp4'] = {
         type: mediaelementExtension.Extension,
         provider: mediaelementProvider.Provider,
-        config:"js/wellcomeplayer-mediaelement-extension-config.js",
-        css:"css/wellcomeplayer-mediaelement-extension.css"
+        name: 'wellcomeplayer-mediaelement-extension'
     };
 
     extensions['video/multiple-sources'] = {
         type: mediaelementExtension.Extension,
         provider: mediaelementProvider.Provider,
-        config:"js/wellcomeplayer-mediaelement-extension-config.js",
-        css:"css/wellcomeplayer-mediaelement-extension.css"
+        name: 'wellcomeplayer-mediaelement-extension'
     };
 
     extensions['audio/mp3'] = {
         type: mediaelementExtension.Extension,
         provider: mediaelementProvider.Provider,
-        config:"js/wellcomeplayer-mediaelement-extension-config.js",
-        css:"css/wellcomeplayer-mediaelement-extension.css"
+        name: 'wellcomeplayer-mediaelement-extension'
     };
 
     extensions['application/pdf'] = {
         type: pdfExtension.Extension,
         provider: pdfProvider.Provider,
-        config:"js/wellcomeplayer-pdf-extension-config.js",
-        css:"css/wellcomeplayer-pdf-extension.css"
+        name: 'wellcomeplayer-pdf-extension'
     };
 
     new bootstrapper(extensions);

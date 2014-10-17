@@ -1,5 +1,7 @@
 {
-    "options": {},
+    "options": {
+        "theme": "coreplayer-default-theme"
+    },
     "modules": {
         "genericDialogue": {
             "content": {
@@ -34,7 +36,8 @@
                 "panelOpen": false,
                 "panelAnimationDuration": 250,
                 "thumbsEnabled": true,
-                "treeEnabled": false
+                "treeEnabled": false,
+                "thumbsExtraHeight": 6
             }
         },
         "pdfCenterPanel": {

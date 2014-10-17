@@ -1,5 +1,6 @@
 {
     "options": {
+        "theme": "coreplayer-default-theme",
         "leftPanelEnabled": true,
         "preloadMoreInfo": true
     },
@@ -133,6 +134,11 @@
                 "save": "Save to Bookmarks",
                 "download": "Download",
                 "embed": "Embed"
+            }
+        },
+        "conditionsDialogue": {
+            "content": {
+                "title": "Conditions of use"
             }
         }
     },
