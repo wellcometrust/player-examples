@@ -41,7 +41,7 @@
         },
         "embedDialogue": {
             "options": {
-                "embedTemplate": "<div class=\"wellcomePlayer\" data-uri=\"{0}\" data-sequenceindex=\"{1}\" data-assetindex=\"{2}\" data-zoom=\"{3}\" data-rotation\"{4}\" data-config=\"{5}\" style=\"width:{6}px; height:{7}px; background-color: #000\"></div>\n<script type=\"text/javascript\" id=\"embedWellcomePlayer\" src=\"{8}\"></script><script type=\"text/javascript\">/* wordpress fix */</script>"
+                "embedTemplate": "<div class=\"wellcomePlayer\" data-uri=\"{0}\" data-sequenceindex=\"{1}\" data-assetindex=\"{2}\" data-zoom=\"{3}\" data-rotation=\"{4}\" data-config=\"{5}\" style=\"width:{6}px; height:{7}px; background-color: #000\"></div>\n<script type=\"text/javascript\" id=\"embedWellcomePlayer\" src=\"{8}\"></script><script type=\"text/javascript\">/* wordpress fix */</script>"
             },
             "content": {
                 "title": "Embed",
@@ -60,7 +60,8 @@
                 "go": "Go",
                 "of": "of {0}",
                 "emptyValue": "Please enter a value",
-                "close": "Close"
+                "close": "Close",
+                "folio": "Folio"
             }
         },
         "treeViewLeftPanel": {
